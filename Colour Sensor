@@ -1,6 +1,6 @@
 #define S0 4
-#define S1 5
-#define S2 6
+#define S1 5          //change to other pin 
+#define S2 6          //change to other pin
 #define S3 7
 #define sensorOut 8
 
@@ -15,8 +15,8 @@ int blue = 0;
 void setup() {
   
   //power saver mode
-  digitalWrite(S0, LOW);
-  digitalWrite(S1 ,LOW);
+//  digitalWrite(S0, LOW);
+//  digitalWrite(S1 ,LOW);
 
 
   pinMode(S0, OUTPUT);
@@ -41,15 +41,15 @@ void setup() {
 
 void isRed()
 {
-  if (red < 350 && blue > red)
+  if (red < 550 && blue > red && green > red)
     Serial.print("Red");
 }
 
 
-void isBlue() 
+void isGreen() 
 {
-  if (blue < 300 && red > blue) 
-    Serial.print("Blue");
+  if (green < 500 && blue > green && red > green) 
+    Serial.print("Green");
 }
 
 
@@ -63,7 +63,13 @@ void loop() {
   digitalWrite(S3, LOW);
   //Reading output freq
   red = pulseIn(sensorOut, LOW);
+  
+  //printing the value on the serial monitor
   isRed();
+//  Serial.print("R= ");
+//  Serial.print(red); //printing RED color freq
+//  Serial.print("   ");
+
 
 
   //Setting green filtered photodiodes to be read
@@ -71,6 +77,11 @@ void loop() {
   digitalWrite(S3, HIGH);
   //Reading output freq
   green = pulseIn(sensorOut, LOW);
+  //printing the value on the serial monitor
+  isGreen();
+//  Serial.print("G= ");
+//  Serial.print(green); //printing RED color freq
+//  Serial.print("   ");
 
 
   //Setting Blue filtered photodiodes to be read
@@ -79,8 +90,12 @@ void loop() {
   //Reading output freq
   blue = pulseIn(sensorOut, LOW);
   //printing the value on the serial monitor
-  isBlue();
-
+  
+//  Serial.print("B= ");
+//  Serial.print(blue); //printing RED color freq
+//  Serial.println("   ");
   delay(400);
   
+
+
 }

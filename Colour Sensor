@@ -1,0 +1,86 @@
+#define S0 4
+#define S1 5
+#define S2 6
+#define S3 7
+#define sensorOut 8
+
+
+int red = 0;
+int green = 0;
+int blue = 0;
+
+
+
+
+void setup() {
+  
+  //power saver mode
+  digitalWrite(S0, LOW);
+  digitalWrite(S1 ,LOW);
+
+
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  pinMode(sensorOut, INPUT);
+
+  /*Setting frequency-scaling 
+      power down - L L
+      2%         - L H
+      20%        - H L
+      100%       - H H
+  */
+
+  digitalWrite(S0, HIGH);
+  digitalWrite(S1, LOW);
+
+  Serial.begin(9600);
+}
+
+
+void isRed()
+{
+  if (red < 350 && blue > red)
+    Serial.print("Red");
+}
+
+
+void isBlue() 
+{
+  if (blue < 300 && red > blue) 
+    Serial.print("Blue");
+}
+
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  //Setting red filtered photodiode to be read
+
+  digitalWrite(S2, LOW);
+  digitalWrite(S3, LOW);
+  //Reading output freq
+  red = pulseIn(sensorOut, LOW);
+  isRed();
+
+
+  //Setting green filtered photodiodes to be read
+  digitalWrite(S2, HIGH);
+  digitalWrite(S3, HIGH);
+  //Reading output freq
+  green = pulseIn(sensorOut, LOW);
+
+
+  //Setting Blue filtered photodiodes to be read
+  digitalWrite(S2, LOW);
+  digitalWrite(S3, HIGH);
+  //Reading output freq
+  blue = pulseIn(sensorOut, LOW);
+  //printing the value on the serial monitor
+  isBlue();
+
+  delay(400);
+  
+}

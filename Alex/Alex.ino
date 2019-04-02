@@ -3,7 +3,8 @@
 #include "packet.h"
 #include "constants.h"
 
-bool overrideIR = true; 
+bool overrideIR = true;
+bool pcint_negedge = false;
 
 typedef enum {
   STOP = 0,
@@ -22,7 +23,7 @@ volatile TDirection dir = STOP;
 // Number of ticks per revolution from the
 // wheel encoder.
 
-#define COUNTS_PER_REV      192
+#define COUNTS_PER_REV      192.0
 
 // Wheel circumference in cm.
 // We will use this to calculate forward/backward distance traveled
@@ -63,6 +64,9 @@ volatile unsigned long rightRevs;
 volatile unsigned long forwardDist;
 volatile unsigned long reverseDist;
 
+// Variables to keep track of whether we have moved a commanded dist
+unsigned long deltaDist;
+unsigned long newDist;
 
 /*
 
@@ -97,6 +101,20 @@ void sendStatus()
   // packetType and command files accordingly, then use sendResponse
   // to send out the packet. See sendMessage on how to use sendResponse.
   //
+  TPacket statusPacket;
+  statusPacket.packetType = PACKET_TYPE_RESPONSE;
+  statusPacket.command = RESP_STATUS;
+  statusPacket.params[0] = leftForwardTicks;
+  statusPacket.params[1] = rightForwardTicks;
+  statusPacket.params[2] = leftReverseTicks;
+  statusPacket.params[3] = rightReverseTicks;
+  statusPacket.params[4] = leftForwardTicksTurns;
+  statusPacket.params[5] = rightForwardTicksTurns;
+  statusPacket.params[6] = leftReverseTicksTurns;
+  statusPacket.params[7] = rightReverseTicksTurns;
+  statusPacket.params[8] = forwardDist;
+  statusPacket.params[9] = reverseDist;  
+  sendResponse(&statusPacket);
 }
 
 void sendMessage(const char *message)
@@ -178,31 +196,36 @@ void sendResponse(TPacket *packet)
    pullup resistors.
 
 */
-// Enable pull up resistors on pins 2 and 3
+// Enable pull up resistors on pin 2
 void enablePullups()
 {
   // Use bare-metal to enable the pull-up resistors on pins
-  // 2 and 3. These are pins PD2 and PD3 respectively.
-  // We set bits 2 and 3 in DDRD to 0 to make them inputs.
+  // 2. This corresponds to pin PD2.
+  // We set bits 2 in DDRD to 0 to make them inputs.
 
-  DDRD  &= 0b11110011;
-  PORTD |= 0b00001100;
+  // MODIFICATION: Enable only pin 2 pull up since we are using PCINT4 as replacement
+
+  DDRD  &= 0b11111011;
+  PORTD |= 0b00000100;
+
+  // Enable pin 12 pull up for PCINT4 interrupt detection
+  DDRB  &= 0b11101111;
+  PORTB |= 0b00010000;
 }
 
-// Functions to be called by INT0 and INT1 ISRs.
+// Functions to be called by INT0 ISRs.
 void leftISR()
 {
-  leftForwardTicks++;
-
+  //leftForwardTicks++;
   switch (dir) {
     case FORWARD:
       leftForwardTicks++;
-      forwardDist = (unsigned long) ((float) leftForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
+      forwardDist = (unsigned long) (((float) leftForwardTicks) / COUNTS_PER_REV * WHEEL_CIRC);
       break;
 
     case BACKWARD:
       leftReverseTicks++;
-      reverseDist = (unsigned long) ((float) leftReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
+      reverseDist = (unsigned long) (((float) leftReverseTicks) / COUNTS_PER_REV * WHEEL_CIRC);
       break;
 
     case LEFT:
@@ -214,22 +237,22 @@ void leftISR()
       break;
   }
 
-  leftRevs = leftForwardTicks / COUNTS_PER_REV;
+  leftRevs = ((float) leftForwardTicks) / COUNTS_PER_REV;
 
   // We calculate forwardDist only in leftISR because we
   // assume that the left and right wheels move at the same
   // time.
   forwardDist = leftRevs * WHEEL_CIRC;
-
-
-  Serial.print("LEFT: ");
+  Serial.print("Left Ticks: ");
   Serial.println(leftForwardTicks);
 }
 
 void rightISR()
 {
-  rightForwardTicks++;
-
+  pcint_negedge = PINB & 0b00010000; // Since PCINT occurs at any pin change, and we only require falling edge
+  if (pcint_negedge){ //if pin is reading high after interrupt is triggered, not negedge
+    return ;
+  }
   switch (dir) {
     case FORWARD:
       rightForwardTicks++;
@@ -245,42 +268,43 @@ void rightISR()
 
     case RIGHT:
       rightReverseTicksTurns++;
-      break;
-
-      rightRevs = rightForwardTicks / COUNTS_PER_REV;
-      Serial.print("RIGHT: ");
-      Serial.println(rightForwardTicks);
+      break;    
   }
+  
+  rightRevs = ((float) rightForwardTicks) / COUNTS_PER_REV;
+  Serial.print("RIGHT ticks: ");
+  Serial.println(rightForwardTicks);
 }
 
-  // Set up the external interrupt pins INT0 and INT1
+  // Set up the external interrupt pins INT0
   // for falling edge triggered. Use bare-metal.
   void setupEINT()
   {
-    // Use bare-metal to configure pins 2 and 3 to be
+    // Use bare-metal to configure pins 2 to be
     // falling edge triggered. Remember to enable
-    // the INT0 and INT1 interrupts.
+    // the INT0 interrupt.
+
+    //MODIFIED: ONLY INT0 enabled
 
     EICRA = 0b00001010;
-    EIMSK = 0b00000011;
+    EIMSK = 0b00000001;
+
+    PCICR |= 0b00000001;
+    PCMSK0 |= 0b00010000;
   }
 
   // Implement the external interrupt ISRs below.
-  // INT0 ISR should call leftISR while INT1 ISR
-  // should call rightISR.
+  // INT0 ISR should call leftISR
 
   ISR(INT0_vect)
   {
     leftISR();
   }
 
-  ISR(INT1_vect)
+  ISR(PCINT0_vect) //PCINT0 controls PCINT4 (PIN 12) INTERRUPT
   {
     rightISR();
   }
-
-
-  // Implement INT0 and INT1 ISRs above.
 
   /*
      Setup and start codes for serial communications
@@ -303,7 +327,6 @@ void rightISR()
   {
     // Empty for now. To be replaced with bare-metal code
     // later on.
-
   }
 
   // Read the serial port. Returns the read character in
@@ -339,6 +362,7 @@ void rightISR()
   // to drive the motors.
   void setupMotors()
   {
+
     /* Our motor set up is:
           A1IN - Pin 5, PD5, OC0B
           A2IN - Pin 6, PD6, OC0A
@@ -374,31 +398,19 @@ void rightISR()
   // continue moving forward indefinitely.
   void forward(float dist, float speed)
   {
-    dir = FORWARD;
-
-    int val = pwmVal(speed);
-
-    // For now we will ignore dist and move
-    // forward indefinitely. We will fix this
-    // in Week 9.
+    deltaDist = (dist > 0)? dist : 9999999;
+    newDist = forwardDist + deltaDist;
     
-
+    dir = FORWARD;
+    int val = pwmVal(speed);
+    
     // LF = Left forward pin, LR = Left reverse pin
     // RF = Right forward pin, RR = Right reverse pin
     // This will be replaced later with bare-metal code.
-
-    
-    clearCounters();
-    while (forwardDist < dist)
-    {
-      analogWrite(LF, val);
-      analogWrite(RF, val);
-      analogWrite(LR, 0);
-      analogWrite(RR, 0);
-    }
-    stop();
-    clearCounters();
-    
+    analogWrite(LF, val);
+    analogWrite(RF, val);
+    analogWrite(LR, 0);
+    analogWrite(RR, 0);
   }
 
   // Reverse Alex "dist" cm at speed "speed".
@@ -499,64 +511,87 @@ void rightISR()
   // Clears one particular counter
   void clearOneCounter(int which)
   {
-    clearCounters();
-    //  switch(which)
-    //  {
-    //    case 0:
-    //      clearCounters();
-    //      break;
-    //
-    //    case 1:
-    //s      leftTicks=0;
-    //      break;
-    //
-    //    case 2:
-    //      rightTicks=0;
-    //      break;
-    //
-    //    case 3:
-    //      leftRevs=0;
-    //      break;
-    //
-    //    case 4:
-    //      rightRevs=0;
-    //      break;
-    //
-    //    case 5:
-    //      forwardDist=0;
-    //      break;
-    //
-    //    case 6:
-    //      reverseDist=0;
-    //      break;
-    //  }
+      switch(which)
+      {
+        case 0:
+          clearCounters();
+          break;
+    
+        case 1:
+    s      leftTicks=0;
+          break;
+    
+        case 2:
+          rightTicks=0;
+          break;
+    
+        case 3:
+          leftRevs=0;
+          break;
+    
+        case 4:
+          rightRevs=0;
+          break;
+    
+        case 5:
+          forwardDist=0;
+          break;
+    
+        case 6:
+          reverseDist=0;
+          break;
+      }
   }
-  // Intialize Vincet's internal states
-
+  
+  // Intialize Alex's internal states
   void initializeState()
   {
     clearCounters();
   }
 
-  void handleCommand(TPacket * command)
+void handleCommand(TPacket *command)
+{
+  switch(command->command)
   {
-    switch (command->command)
-    {
-      // For movement commands, param[0] = distance, param[1] = speed.
-      case COMMAND_FORWARD:
+    // For movement commands, param[0] = distance, param[1] = speed.
+    case COMMAND_FORWARD:
         sendOK();
         forward((float) command->params[0], (float) command->params[1]);
+      break;
+
+    case COMMAND_REVERSE:
+      sendOK();
+      reverse((float) command->params[0], (float) command->params[1]);
+      break;
+
+    case COMMAND_TURN_LEFT:
+      sendOK();
+      left((float) command->params[0], (float) command->params[1]);
+      break;
+
+    case COMMAND_TURN_RIGHT:
+      sendOK();
+      right((float) command->params[0], (float) command->params[1]);
+      break;
+
+    case COMMAND_STOP:
+      sendOK();
+      stop();
+      break;
+
+    case COMMAND_GET_STATS:
+      sendStatus();
+      break;
+
+    case COMMAND_CLEAR_STATS:
+      sendOK();
+      clearOneCounter(command->params[0]);
         break;
-
-      /*
-         Implement code for other commands here.
-
-      */
-
-      default:
-        sendBadCommand();
-    }
+           
+    default:
+      sendBadCommand();
   }
+}
 
   void waitForHello()
   {
@@ -576,8 +611,6 @@ void rightISR()
       {
         if (hello.packetType == PACKET_TYPE_HELLO)
         {
-
-
           sendOK();
           exit = 1;
         }
@@ -632,8 +665,8 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
 void setupColourSensor(){
   // Set S0:4, S3:7, S1:3, S2:9 as output
   // Set sensorOut:8 as input
-  DDRD |= 0b10010000;
-  DDRB |= 0b00110000;
+  DDRD |= 0b10011000;
+  DDRB |= 0b00000010;
   DDRB &= 0b11111110; 
   
   //power saver mode - set S0 and S1 as LOW
@@ -648,7 +681,7 @@ int colourDetect(){
   PORTD |= 0b00010000;
   PORTD &= 0b11110111;
   delay(300);
-  Serial.println("hi");
+  Serial.println("colour detector on");
   
   //Detect red colour - Set S2 and S3 as LOW
   DDRB &= 0b11111101;
@@ -690,7 +723,6 @@ int colourDetect(){
 
 void setup() {
     // put your setup code here, to run once:
-
     cli();
     setupEINT();
     setupSerial();
@@ -699,10 +731,10 @@ void setup() {
     startMotors();
     enablePullups();
     initializeState();
-    setupADC();
-    setupColourSensor();
+    //setupADC();
+    //setupColourSensor();
     sei();
-    startADC();
+    //startADC();
   }
 
 void handlePacket(TPacket * packet)
@@ -731,7 +763,7 @@ void handlePacket(TPacket * packet)
 
     // Uncomment the code below for Step 2 of Activity 3 in Week 8 Studio 2
 
-    // forward(0, 100);
+    forward(200, 30);
 
     // Uncomment the code below for Week 9 Studio 2
 
@@ -752,7 +784,25 @@ void handlePacket(TPacket * packet)
           {
             sendBadChecksum();
           }
-      delay(100);
-      colourDetect();
 
+      if(deltaDist > 0){
+        if(dir==FORWARD && forwardDist >= newDist){
+          deltaDist=0;
+          newDist=0;
+          stop();
+        }
+        
+        else if(dir == BACKWARD && reverseDist >= newDist){
+          deltaDist=0;
+          newDist=0;
+          stop();
+        }
+      
+      else if(dir == STOP){
+          deltaDist=0;
+          newDist=0;
+          stop();
+          }
+       }
+      //colourDetect();
   }

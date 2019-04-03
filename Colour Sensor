@@ -1,101 +1,57 @@
-#define S0 4
-#define S1 5          //change to other pin 
-#define S2 6          //change to other pin
-#define S3 7
-#define sensorOut 8
+int colourDetect(){
+  int sensorOut = 8;
+  int red, blue, green;
 
-
-int red = 0;
-int green = 0;
-int blue = 0;
-
-
-
-
-void setup() {
+  // Set at 20% power - Set S0 as HIGH and S1 as LOW
+  PORTD |= 0b00010000;
+  PORTD &= 0b11110111;
+  delay(300);
   
-  //power saver mode
-//  digitalWrite(S0, LOW);
-//  digitalWrite(S1 ,LOW);
-
-
-  pinMode(S0, OUTPUT);
-  pinMode(S1, OUTPUT);
-  pinMode(S2, OUTPUT);
-  pinMode(S3, OUTPUT);
-  pinMode(sensorOut, INPUT);
-
-  /*Setting frequency-scaling 
-      power down - L L
-      2%         - L H
-      20%        - H L
-      100%       - H H
-  */
-
-  digitalWrite(S0, HIGH);
-  digitalWrite(S1, LOW);
-
-  Serial.begin(9600);
-}
-
-
-void isRed()
-{
-  if (red < 550 && blue > red && green > red)
-    Serial.print("Red");
-}
-
-
-void isGreen() 
-{
-  if (green < 500 && blue > green && red > green) 
-    Serial.print("Green");
-}
-
-
-
-void loop() {
-  // put your main code here, to run repeatedly:
-
-  //Setting red filtered photodiode to be read
-
-  digitalWrite(S2, LOW);
-  digitalWrite(S3, LOW);
-  //Reading output freq
+  
+  //Detect red colour - Set S2 and S3 as LOW
+    PORTB &= 0b111101;
+    PORTD &= 0b01111111; 
+//  DDRB &= 0b11111101;
+//  DDRD &= 0b01111111;
+  //delay(300);
   red = pulseIn(sensorOut, LOW);
+  red = map(red, 0, 1023, 0, 255);
+
   
-  //printing the value on the serial monitor
-  isRed();
-//  Serial.print("R= ");
-//  Serial.print(red); //printing RED color freq
-//  Serial.print("   ");
-
-
-
-  //Setting green filtered photodiodes to be read
-  digitalWrite(S2, HIGH);
-  digitalWrite(S3, HIGH);
-  //Reading output freq
+  //Detect green colour - Set S2 and S3 as HIGH
+    PORTB |= 0b000010;
+    PORTD |= 0b10000000;
+//  DDRB |= 0b00000010;
+//  DDRD |= 0b00010000;
+  //delay(300);
   green = pulseIn(sensorOut, LOW);
-  //printing the value on the serial monitor
-  isGreen();
-//  Serial.print("G= ");
-//  Serial.print(green); //printing RED color freq
-//  Serial.print("   ");
+  green = map(green, 0, 1023, 0, 255); 
 
 
-  //Setting Blue filtered photodiodes to be read
-  digitalWrite(S2, LOW);
-  digitalWrite(S3, HIGH);
-  //Reading output freq
+  //Detect green colour - Set S2 as low and S3 as HIGH
+    PORTB &= 0b111101;
+    PORTD |= 0b10000000;
+//  DDRB &= 0b11111101;
+//  DDRD |= 0b00010000;
+  //delay(300);
   blue = pulseIn(sensorOut, LOW);
-  //printing the value on the serial monitor
-  
-//  Serial.print("B= ");
-//  Serial.print(blue); //printing RED color freq
-//  Serial.println("   ");
-  delay(400);
-  
+  blue = map(blue, 0, 1023, 0, 255);
+  Serial.print("Red = ");
+  Serial.println(red);
 
+  
+  Serial.print("Green = ");
+  Serial.println(green);
 
+  
+  Serial.print("Blue = ");
+  Serial.println(blue);
+  
+  Serial.println((red < 550 && blue > red && green > red));
+
+  //power saver mode
+  PORTD &= 0b11101111;
+  PORTB &= 0b11101111; 
+  
+  return (red < 550 && blue > red && green > red);
 }

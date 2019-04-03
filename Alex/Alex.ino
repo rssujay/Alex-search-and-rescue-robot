@@ -1,4 +1,5 @@
 #include <serialize.h>
+#include <math.h>
 
 #include "packet.h"
 #include "constants.h"
@@ -38,6 +39,19 @@ volatile TDirection dir = STOP;
 #define RF                  10  // Right forward pin
 #define RR                  11  // Right reverse pin
 
+#define PI                  3.14159264 
+
+// Alex's length and breadth (cm)
+#define ALEX_LENGTH 8.0
+#define ALEX_BREADTH 5.5
+
+// Alex's diagonal, we compute and store this value only once
+// since it is expensive to compute and doesn't really change.
+float AlexDiagonal = 0.0;
+
+//Alex's turning circumference
+float AlexCirc = 0.0;
+
 /*
       Alex's State Variables
 */
@@ -61,12 +75,15 @@ volatile unsigned long leftRevs;
 volatile unsigned long rightRevs;
 
 // Forward and backward distance traveled
-volatile unsigned long forwardDist;
-volatile unsigned long reverseDist;
+volatile float forwardDist;
+volatile float forwardDist2;
+volatile float reverseDist;
 
 // Variables to keep track of whether we have moved a commanded dist
-unsigned long deltaDist;
-unsigned long newDist;
+float deltaDist;
+float newDist;
+unsigned long deltaTicks;
+unsigned long targetTicks;
 
 /*
 
@@ -220,12 +237,12 @@ void leftISR()
   switch (dir) {
     case FORWARD:
       leftForwardTicks++;
-      forwardDist = (unsigned long) (((float) leftForwardTicks) / COUNTS_PER_REV * WHEEL_CIRC);
+      forwardDist = (((float) leftForwardTicks) / COUNTS_PER_REV * WHEEL_CIRC);
       break;
 
     case BACKWARD:
       leftReverseTicks++;
-      reverseDist = (unsigned long) (((float) leftReverseTicks) / COUNTS_PER_REV * WHEEL_CIRC);
+      reverseDist = (((float) leftReverseTicks) / COUNTS_PER_REV * WHEEL_CIRC);
       break;
 
     case LEFT:
@@ -237,14 +254,9 @@ void leftISR()
       break;
   }
 
-  leftRevs = ((float) leftForwardTicks) / COUNTS_PER_REV;
-
   // We calculate forwardDist only in leftISR because we
   // assume that the left and right wheels move at the same
   // time.
-  forwardDist = leftRevs * WHEEL_CIRC;
-  Serial.print("Left Ticks: ");
-  Serial.println(leftForwardTicks);
 }
 
 void rightISR()
@@ -256,6 +268,9 @@ void rightISR()
   switch (dir) {
     case FORWARD:
       rightForwardTicks++;
+      forwardDist2 = (((float) rightForwardTicks) / COUNTS_PER_REV * WHEEL_CIRC);
+      Serial.print("forwardDist2: ");
+      Serial.println(forwardDist2);
       break;
 
     case BACKWARD:
@@ -272,8 +287,8 @@ void rightISR()
   }
   
   rightRevs = ((float) rightForwardTicks) / COUNTS_PER_REV;
-  Serial.print("RIGHT ticks: ");
-  Serial.println(rightForwardTicks);
+  //Serial.print("RIGHT ticks: ");
+  //Serial.println(rightForwardTicks);
 }
 
   // Set up the external interrupt pins INT0
@@ -398,9 +413,8 @@ void rightISR()
   // continue moving forward indefinitely.
   void forward(float dist, float speed)
   {
-    deltaDist = (dist > 0)? dist : 9999999;
-    newDist = forwardDist + deltaDist;
-    
+    deltaDist = (dist == 0)? 9999999 : dist;
+    newDist = forwardDist + deltaDist;    
     dir = FORWARD;
     int val = pwmVal(speed);
     
@@ -420,9 +434,11 @@ void rightISR()
   // continue reversing indefinitely.
   void reverse(float dist, float speed)
   {
+    
+    deltaDist = (dist == 0)? 9999999 : dist;
+    newDist = reverseDist + deltaDist;
     dir = BACKWARD;
     int val = pwmVal(speed);
-
     // For now we will ignore dist and
     // reverse indefinitely. We will fix this
     // in Week 9.
@@ -436,6 +452,15 @@ void rightISR()
     analogWrite(RF, 0);
   }
 
+  unsigned long computeDeltaTicks(float ang){
+    // We will assume that the angular distance moved = linear distance moved in one wheel
+    // revolution. This is (probably) incorrect but simplifies calculation.
+    // # of wheel revs to make one full 360 turn is AlexCirc/ WHEEL_CIRC
+    // This is for 360 degrees. For ang degrees it will be (ang * AlexCirc) / (360 * WHEEL_CIRC)
+    // To convert to ticks, we multiply by COUNTS_PER_REV.
+    return (unsigned long)((ang * AlexCirc * COUNTS_PER_REV) / (360.0 * WHEEL_CIRC));
+  }
+
   // Turn Alex left "ang" degrees at speed "speed".
   // "speed" is expressed as a percentage. E.g. 50 is
   // turn left at half speed.
@@ -443,7 +468,10 @@ void rightISR()
   // turn left indefinitely.
   void left(float ang, float speed)
   {
+    deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
+    targetTicks = leftReverseTicksTurns + deltaTicks;
     dir = LEFT;
+    
     int val = pwmVal(speed);
 
     // For now we will ignore ang. We will fix this in Week 9.
@@ -463,6 +491,8 @@ void rightISR()
   // turn right indefinitely.
   void right(float ang, float speed)
   {
+    deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
+    targetTicks = rightReverseTicksTurns + deltaTicks;
     dir = RIGHT;
     int val = pwmVal(speed);
 
@@ -511,36 +541,36 @@ void rightISR()
   // Clears one particular counter
   void clearOneCounter(int which)
   {
-      switch(which)
-      {
-        case 0:
-          clearCounters();
-          break;
-    
-        case 1:
-    s      leftTicks=0;
-          break;
-    
-        case 2:
-          rightTicks=0;
-          break;
-    
-        case 3:
-          leftRevs=0;
-          break;
-    
-        case 4:
-          rightRevs=0;
-          break;
-    
-        case 5:
-          forwardDist=0;
-          break;
-    
-        case 6:
-          reverseDist=0;
-          break;
-      }
+//      switch(which)
+//      {
+//        case 0:
+//          clearCounters();
+//          break;
+//    
+//        case 1:
+//          leftTicks=0;
+//          break;
+//    
+//        case 2:
+//          rightTicks=0;
+//          break;
+//    
+//        case 3:
+//          leftRevs=0;
+//          break;
+//    
+//        case 4:
+//          rightRevs=0;
+//          break;
+//    
+//        case 5:
+//          forwardDist=0;
+//          break;
+//    
+//        case 6:
+//          reverseDist=0;
+//          break;
+//      }
   }
   
   // Intialize Alex's internal states
@@ -558,7 +588,7 @@ void handleCommand(TPacket *command)
         sendOK();
         forward((float) command->params[0], (float) command->params[1]);
       break;
-
+      
     case COMMAND_REVERSE:
       sendOK();
       reverse((float) command->params[0], (float) command->params[1]);
@@ -684,31 +714,32 @@ int colourDetect(){
   Serial.println("colour detector on");
   
   //Detect red colour - Set S2 and S3 as LOW
-  DDRB &= 0b11111101;
-  DDRD &= 0b01111111;
+  PORTB &= 0b11111101;
+  PORTD &= 0b01111111;  
   //delay(300);
   red = pulseIn(sensorOut, LOW);
+  red = map(red, 0, 1023, 0, 255);
   
   //Detect green colour - Set S2 and S3 as HIGH
-  DDRB |= 0b00000010;
-  DDRD |= 0b00010000;
+  PORTB |= 0b00000010;
+  PORTD |= 0b10000000;
   //delay(300);
   green = pulseIn(sensorOut, LOW);
+  green = map(green, 0, 1023, 0, 255);
 
-  //Detect green colour - Set S2 as low and S3 as HIGH
-  DDRB &= 0b11111101;
-  DDRD |= 0b00010000;
+  //Detect blue colour - Set S2 as low and S3 as HIGH
+  PORTB &= 0b11111101;
+  PORTD |= 0b10000000;
   //delay(300);
   blue = pulseIn(sensorOut, LOW);
+  blue = map(blue, 0, 1023, 0, 255);
 
   Serial.print("Red = ");
   Serial.println(red);
-
-  
+ 
   Serial.print("Green = ");
   Serial.println(green);
-
-  
+ 
   Serial.print("Blue = ");
   Serial.println(blue);
   
@@ -723,6 +754,10 @@ int colourDetect(){
 
 void setup() {
     // put your setup code here, to run once:
+    // Compute the diagonal
+    AlexDiagonal = sqrt((ALEX_LENGTH * ALEX_LENGTH) + (ALEX_BREADTH *ALEX_BREADTH));
+    AlexCirc = PI * AlexDiagonal;
+
     cli();
     setupEINT();
     setupSerial();
@@ -735,6 +770,9 @@ void setup() {
     //setupColourSensor();
     sei();
     //startADC();
+    left(90, 30);
+    delay(5000);
+    right(90, 30);
   }
 
 void handlePacket(TPacket * packet)
@@ -760,10 +798,7 @@ void handlePacket(TPacket * packet)
   }
 
   void loop() {
-
     // Uncomment the code below for Step 2 of Activity 3 in Week 8 Studio 2
-
-    forward(200, 30);
 
     // Uncomment the code below for Week 9 Studio 2
 
@@ -805,4 +840,28 @@ void handlePacket(TPacket * packet)
           }
        }
       //colourDetect();
+      Serial.print("forwardDist: ");
+      Serial.println(forwardDist2);
+      Serial.print("reverseDist: ");
+      Serial.println(reverseDist);
+
+      if (deltaTicks > 0){
+        if (dir == LEFT && leftReverseTicksTurns >= targetTicks){
+            deltaTicks = 0;
+            targetTicks = 0;
+            stop();
+        }
+
+        else if (dir == RIGHT && rightReverseTicksTurns >= targetTicks){
+          deltaTicks = 0;
+          targetTicks = 0;
+          stop();  
+        }
+
+        else if (dir == STOP){
+          deltaTicks = 0;
+          targetTicks = 0;
+          stop();
+        }
+      }
   }

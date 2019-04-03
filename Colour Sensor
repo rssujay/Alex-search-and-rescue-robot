@@ -1,3 +1,15 @@
+void setupColourSensor(){
+  // Set S0:4, S3:7, S1:3, S2:9 as output
+  // Set sensorOut:8 as input
+  DDRB |= 0b000010;
+  DDRB &= 0b111110;
+  DDRD |= 0b10011000;
+  
+  //power saver mode - set S0 and S1 as LOW
+  PORTD &= 0b11100111;
+}
+
+
 int colourDetect(){
   int sensorOut = 8;
   int red, blue, green;

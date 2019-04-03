@@ -684,31 +684,32 @@ int colourDetect(){
   Serial.println("colour detector on");
   
   //Detect red colour - Set S2 and S3 as LOW
-  DDRB &= 0b11111101;
-  DDRD &= 0b01111111;
+  PORTB &= 0b11111101;
+  PORTD &= 0b01111111;  
   //delay(300);
   red = pulseIn(sensorOut, LOW);
+  red = map(red, 0, 1023, 0, 255);
   
   //Detect green colour - Set S2 and S3 as HIGH
-  DDRB |= 0b00000010;
-  DDRD |= 0b00010000;
+  PORTB |= 0b00000010;
+  PORTD |= 0b10000000;
   //delay(300);
   green = pulseIn(sensorOut, LOW);
+  green = map(green, 0, 1023, 0, 255);
 
-  //Detect green colour - Set S2 as low and S3 as HIGH
-  DDRB &= 0b11111101;
-  DDRD |= 0b00010000;
+  //Detect blue colour - Set S2 as low and S3 as HIGH
+  PORTB &= 0b11111101;
+  PORTD |= 0b10000000;
   //delay(300);
   blue = pulseIn(sensorOut, LOW);
+  blue = map(blue, 0, 1023, 0, 255);
 
   Serial.print("Red = ");
   Serial.println(red);
-
-  
+ 
   Serial.print("Green = ");
   Serial.println(green);
-
-  
+ 
   Serial.print("Blue = ");
   Serial.println(blue);
   

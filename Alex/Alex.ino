@@ -710,7 +710,7 @@ void setupColourSensor(){
   PORTD &= 0b11100111;
 }
 
-int colourDetect(){
+char colourDetect(){
   int sensorOut = 8;
   int red, blue, green;
 
@@ -756,7 +756,7 @@ int colourDetect(){
   PORTD &= 0b11101111;
   PORTB &= 0b11101111; 
   
-  return (red < 550 && blue > red && green > red);
+  return (red < 550 && blue > red && green > red) ? 'g' : 'r';
 }
 
 void setup() {

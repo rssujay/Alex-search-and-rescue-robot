@@ -36,8 +36,8 @@ volatile TDirection dir = STOP;
 // Alex moves in the correct direction
 #define LF                  6   // Left forward pin
 #define LR                  5   // Left reverse pin
-#define RF                  10  // Right forward pin
-#define RR                  11  // Right reverse pin
+#define RF                  11  // Right forward pin
+#define RR                  10  // Right reverse pin
 
 #define PI                  3.14159264 
 
@@ -667,6 +667,7 @@ void startADC(){
 }
 
 ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conversion
+  //Serial.println("IR");
     unsigned int loval = ADCL;
     unsigned int hival = ADCH;
     unsigned int adcvalue = hival * 256 + loval; // ADC conversion result is 10 bits, stored in ADCH & ADCL
@@ -711,7 +712,7 @@ int colourDetect(){
   PORTD |= 0b00010000;
   PORTD &= 0b11110111;
   delay(300);
-  Serial.println("colour detector on");
+  //Serial.println("colour detector on");
   
   //Detect red colour - Set S2 and S3 as LOW
   PORTB &= 0b11111101;
@@ -766,13 +767,11 @@ void setup() {
     startMotors();
     enablePullups();
     initializeState();
-    //setupADC();
+    setupADC();
     //setupColourSensor();
     sei();
-    //startADC();
-    left(90, 30);
-    delay(5000);
-    right(90, 30);
+    startADC();
+    forward(100,30);
   }
 
 void handlePacket(TPacket * packet)
@@ -840,10 +839,10 @@ void handlePacket(TPacket * packet)
           }
        }
       //colourDetect();
-      Serial.print("forwardDist: ");
+      Serial.print("forwardDist2: ");
       Serial.println(forwardDist2);
-      Serial.print("reverseDist: ");
-      Serial.println(reverseDist);
+      Serial.print("forwardDist: ");
+      Serial.println(forwardDist);
 
       if (deltaTicks > 0){
         if (dir == LEFT && leftReverseTicksTurns >= targetTicks){
@@ -864,4 +863,5 @@ void handlePacket(TPacket * packet)
           stop();
         }
       }
+      //colourDetect();
   }

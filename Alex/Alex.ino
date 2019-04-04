@@ -618,7 +618,7 @@ void handleCommand(TPacket *command)
       clearOneCounter(command->params[0]);
         break;
       
-    case COMMAND_SCAN_COLOUR
+    case COMMAND_SCAN_COLOUR:
       stop();
       //overide ir
       sendMessage(colourDetect());

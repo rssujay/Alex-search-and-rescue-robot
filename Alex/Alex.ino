@@ -617,6 +617,12 @@ void handleCommand(TPacket *command)
       sendOK();
       clearOneCounter(command->params[0]);
         break;
+      
+    case COMMAND_SCAN_COLOUR
+      stop();
+      //overide ir
+      sendMessage(colourDetect());
+      break;
            
     default:
       sendBadCommand();

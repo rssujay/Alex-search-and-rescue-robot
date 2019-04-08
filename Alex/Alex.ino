@@ -85,6 +85,14 @@ float newDist;
 unsigned long deltaTicks;
 unsigned long targetTicks;
 
+//Variables to keep track of IR sensor input
+volatile unsigned long leftIr;
+volatile unsigned long middleIr;
+volatile unsigned long rightIr;
+volatile bool leftIrTrigger;
+volatile bool middleIRTrigger;
+volatile bool rightIRTrigger;
+
 /*
 
    Alex Communication Routines.
@@ -207,6 +215,21 @@ void sendResponse(TPacket *packet)
   writeSerial(buffer, len);
 }
 
+/*
+void sendIR()
+{
+  Tpacket IrInfo;
+  IrInfo.packetType = PACKET_TYPE_RESPONSE;
+  IrInfo.command = RESP_IR_INFO;
+  statusPacket.params[0] = leftIr;
+  statusPacket.params[1] = middleIr;
+  statusPacket.params[2] = rightIr;
+  statusPacket.params[3] = leftIrTrigger;
+  statusPacket.params[4] = middleIrTrigger;
+  statusPacket.params[5] = rightIrTrigger;
+  sendResponse(&IrInfo);
+}
+*/
 
 /*
    Setup and start codes for external interrupts and

@@ -766,7 +766,7 @@ char colourDetect(){
   PORTD &= 0b11101111;
   PORTB &= 0b11101111; 
   
-  return (red < 550 && blue > red && green > red) ? 'g' : 'r';
+  return (red < 550 && blue > red && green > red) ? sendMessage('g') : sendMessage('r');
 }
 
 void setup() {

@@ -216,22 +216,6 @@ void sendResponse(TPacket *packet)
 }
 
 /*
-void sendIR()
-{
-  Tpacket IrInfo;
-  IrInfo.packetType = PACKET_TYPE_RESPONSE;
-  IrInfo.command = RESP_IR_INFO;
-  statusPacket.params[0] = leftIr;
-  statusPacket.params[1] = middleIr;
-  statusPacket.params[2] = rightIr;
-  statusPacket.params[3] = leftIrTrigger;
-  statusPacket.params[4] = middleIrTrigger;
-  statusPacket.params[5] = rightIrTrigger;
-  sendResponse(&IrInfo);
-}
-*/
-
-/*
    Setup and start codes for external interrupts and
    pullup resistors.
 
@@ -707,16 +691,19 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
     case 0b01000000: // A0 
       adcvalue < 500 && !(overrideIR) ? Serial.println("Left collision detect"): 1;
       ADMUX = 0b01000001;
+      sendMessage("LEFT!");
       break;
     
     case 0b01000001: // A1
       adcvalue < 500 && !(overrideIR) ? Serial.println("Centre collision detect"): 1;
       ADMUX = 0b01000010;
+      sendMessage("MID!");
       break;
 
     case 0b01000010: // A2
       adcvalue < 500 && !(overrideIR) ? Serial.println("Right collision detect"): 1;
       ADMUX = 0b01000000;
+      sendMessage("RIGHT!");
       break;
   }
   ADCSRA |= 0b01000000; // Restart ADC conversion

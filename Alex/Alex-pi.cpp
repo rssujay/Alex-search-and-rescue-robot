@@ -172,19 +172,6 @@ void getParams(TPacket *commandPacket)
 	flushInput();
 }
 
-/*
-void handleIr(TPacket *packet)
-{
-	printf("\n ------- ALEX STATUS REPORT ------- \n\n");
-	printf("Left IR Distance:\t\t%d\n", packet->params[0]);
-	printf("Middle IR Distance:\t\t%d\n", packet->params[1]);
-	printf("Right IR Distance:\t\t%d\n", packet->params[2]);
-	printf("Left IR Trigger:\t\t%d\n", packet->params[3]);
-	printf("Middle IR Trigger:\t%d\n", packet->params[4]);
-	printf("Right IR Trigger:\t%d\n", packet->params[5]);
-	
-}
-*/
 
 void sendCommand(char command)
 {

@@ -8,6 +8,7 @@
 #include "serialize.h"
 #include "constants.h"
 #include <iostream>
+#include "conio.h"
 
 #define PORT_NAME			"/dev/ttyACM0"
 #define BAUD_RATE			B57600
@@ -149,7 +150,7 @@ void *receiveThread(void *p)
 				counter=0;
 				handlePacket(&packet);
 			}
-			else 
+			else
 				if(result != PACKET_INCOMPLETE)
 				{
 					printf("PACKET ERROR\n");
@@ -174,14 +175,62 @@ void getParams(TPacket *commandPacket)
 	flushInput();
 }
 
+void WASDcontrol(void){
+	while (1){
+	TPacket commandPacket;
+		key_code = getch();
+		// do stuff depending on key_code
+
+		switch(key_code){
+			"W":
+			"w":
+			commandPacket->params[0] = 1;
+			commandPacket->params[1] = 75;
+			commandPacket->command = COMMAND_FORWARD;
+			sendPacket(&commandPacket);
+			break;
+
+			"A":
+			"a":
+			commandPacket->params[0] = 1;
+			commandPacket->params[1] = 75;
+			commandPacket->command = COMMAND_TURN_LEFT;
+			sendPacket(&commandPacket);
+			break;
+
+			"S":
+			"s":
+			commandPacket->params[0] = 1;
+			commandPacket->params[1] = 75;
+			commandPacket->command = COMMAND_REVERSE;
+			sendPacket(&commandPacket);
+			break;
+
+			"D":
+			"d":
+			commandPacket->params[0] = 1;
+			commandPacket->params[1] = 75;
+			commandPacket->command = COMMAND_TURN_RIGHT;
+			sendPacket(&commandPacket);
+			break;
+
+			"N":
+			"n":
+			return ;
+
+			default:
+				continue;
+		}
+	}
+}
+
 void sendCommand(char command)
 {
 	TPacket commandPacket;
 
 	commandPacket.packetType = PACKET_TYPE_COMMAND;
 
-	switch(command)
-	{
+	switch(command){
 		case 'f':
 		case 'F':
 			getParams(&commandPacket);
@@ -228,7 +277,7 @@ void sendCommand(char command)
 			commandPacket.command = COMMAND_GET_STATS;
 			sendPacket(&commandPacket);
 			break;
-		
+
 		case 'o':
 		case 'O':
 			commandPacket.command = COMMAND_OVERRIDEIR;
@@ -283,7 +332,12 @@ int main()
 		// Purge extraneous characters from input stream
 		flushInput();
 
-		sendCommand(ch);
+		if (ch == "N" || ch == "n"){
+			WASDcontrol();
+		}
+		else{
+			sendCommand(ch);
+		}
 	}
 
 	printf("Closing connection to Arduino.\n");

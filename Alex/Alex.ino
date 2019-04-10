@@ -625,6 +625,10 @@ void handleCommand(TPacket *command)
       clearOneCounter(command->params[0]);
         break;
       
+    case COMMAND_OVERRIDEIR
+      overrideIR = true;
+      break;
+      
     case COMMAND_SCAN_COLOUR:
       stop();
       //overide ir
@@ -689,9 +693,8 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
   // IR sensor is approximately digital (0 when too close)
   switch(ADMUX){ 
     case 0b01000000: // A0 
-      adcvalue < 500 && !(overrideIR) ? Serial.println("Left collision detect"): 1;
+      adcvalue < 500 && !(overrideIR) ? /*Serial.println("Left collision detect")*/ sendMessage("LEFT!") : 1;
       ADMUX = 0b01000001;
-      sendMessage("LEFT!");
       break;
     
     case 0b01000001: // A1

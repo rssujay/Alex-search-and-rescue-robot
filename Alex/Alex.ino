@@ -76,7 +76,6 @@ volatile unsigned long rightRevs;
 
 // Forward and backward distance traveled
 volatile float forwardDist;
-volatile float forwardDist2;
 volatile float reverseDist;
 
 // Variables to keep track of whether we have moved a commanded dist
@@ -240,7 +239,6 @@ void enablePullups()
 // Functions to be called by INT0 ISRs.
 void leftISR()
 {
-  //leftForwardTicks++;
   switch (dir) {
     case FORWARD:
       leftForwardTicks++;
@@ -275,9 +273,6 @@ void rightISR()
   switch (dir) {
     case FORWARD:
       rightForwardTicks++;
-      forwardDist2 = (((float) rightForwardTicks) / COUNTS_PER_REV * WHEEL_CIRC);
-      Serial.print("forwardDist2: ");
-      Serial.println(forwardDist2);
       break;
 
     case BACKWARD:
@@ -792,7 +787,6 @@ void setup() {
     setupColourSensor();
     sei();
     startADC();
-    forward(100,30);
   }
 
 void handlePacket(TPacket * packet)
@@ -859,11 +853,6 @@ void handlePacket(TPacket * packet)
           stop();
           }
        }
-      //colourDetect();
-      Serial.print("forwardDist2: ");
-      Serial.println(forwardDist2);
-      Serial.print("forwardDist: ");
-      Serial.println(forwardDist);
 
       if (deltaTicks > 0){
         if (dir == LEFT && leftReverseTicksTurns >= targetTicks){

@@ -4,7 +4,8 @@
 #include "packet.h"
 #include "constants.h"
 
-bool overrideIR = false;
+volatile bool overrideIR = true;
+volatile bool manualOverride = false;
 bool pcint_negedge = false;
 
 typedef enum {
@@ -262,6 +263,10 @@ void leftISR()
   // We calculate forwardDist only in leftISR because we
   // assume that the left and right wheels move at the same
   // time.
+
+  Serial.print("Left ticks =");
+  Serial.print(" ");
+  Serial.print(leftForwardTicks);
 }
 
 void rightISR()
@@ -289,8 +294,8 @@ void rightISR()
   }
   
   rightRevs = ((float) rightForwardTicks) / COUNTS_PER_REV;
-  //Serial.print("RIGHT ticks: ");
-  //Serial.println(rightForwardTicks);
+  Serial.print("RIGHT ticks: ");
+  Serial.println(rightForwardTicks);
 }
 
   // Set up the external interrupt pins INT0
@@ -424,7 +429,7 @@ void rightISR()
     // RF = Right forward pin, RR = Right reverse pin
     // This will be replaced later with bare-metal code.
     analogWrite(LF, val);
-    analogWrite(RF, val);
+    analogWrite(RF, 0.865 * val);
     analogWrite(LR, 0);
     analogWrite(RR, 0);
   }
@@ -490,7 +495,7 @@ void rightISR()
   // "speed" is expressed as a percentage. E.g. 50 is
   // turn left at half speed.
   // Specifying an angle of 0 degrees will cause Alex to
-  // turn right indefinitely.
+  // turn s indefinitely.
   void right(float ang, float speed)
   {
     deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
@@ -621,7 +626,8 @@ void handleCommand(TPacket *command)
         break;
       
     case COMMAND_OVERRIDEIR:
-      overrideIR = ~overrideIR;
+      overrideIR = !overrideIR;
+      (overrideIR)? sendMessage("override on") : sendMessage("override off");
       break;
       
     case COMMAND_SCAN_COLOUR:
@@ -677,6 +683,12 @@ void startADC(){
   ADCSRA |= 0b01000000; // start ADC conversion
 }
 
+
+
+//
+//    IR SENSOR ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
 ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conversion
     unsigned int loval = ADCL;
     unsigned int hival = ADCH;
@@ -687,21 +699,30 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
   switch(ADMUX){ 
     case 0b01000000: // A0
     if (adcvalue < 500 && !(overrideIR)){
-      sendMessage("Left");
+      overrideIR = true;
+      stop();
+      delay(10);
+      sendMessage("L on");
     }
       ADMUX = 0b01000001;
       break;
     
     case 0b01000001: // A1
       if (adcvalue < 500 && !(overrideIR)){
-        sendMessage("Centre");
+        overrideIR = true;
+        stop();
+        delay(10);
+        sendMessage("C on");
       }
       ADMUX = 0b01000010;
       break;
 
     case 0b01000010: // A2
       if (adcvalue < 500 && !(overrideIR)){
-        sendMessage("Right");
+        overrideIR = true;
+        stop();
+        delay(10);
+        sendMessage("R on");
       }
       ADMUX = 0b01000000;
       break;
@@ -766,7 +787,7 @@ void colourDetect(){
   PORTD &= 0b11101111;
   PORTB &= 0b11101111; 
   
-  (red < 550 && blue > red && green > red) ? sendMessage('g') : sendMessage('r');
+  (red < 550 && blue > red && green > red) ? sendMessage("g") : sendMessage("r");
 }
 
 void setup() {
@@ -787,6 +808,7 @@ void setup() {
     setupColourSensor();
     sei();
     startADC();
+    forward(100,75);
   }
 
 void handlePacket(TPacket * packet)

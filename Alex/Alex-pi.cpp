@@ -227,6 +227,12 @@ void sendCommand(char command)
 			commandPacket.command = COMMAND_GET_STATS;
 			sendPacket(&commandPacket);
 			break;
+			
+		case 'o':
+		case 'O':
+			commandPacket.command = COMMAND_OVERRIDEIR;
+			sendPacket(&commandPacket);
+			break;
 
 		case 'q':
 		case 'Q':

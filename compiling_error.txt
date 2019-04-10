@@ -1,4 +1,0 @@
-C:\Users\sujay\Desktop\CG1112-04-03-02\w8s2p3-pi.cpp:2:21: fatal error: pthread.h: No such file or directory
- #include <pthread.h>
-                     ^
-compilation terminated.

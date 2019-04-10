@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-//#include <termios.h>
+#include <termios.h>
 #include <sys/ioctl.h>
 #include <errno.h>
 #include "serial.h"
@@ -28,7 +28,7 @@ void startSerial(const char *portName, int baudRate, int byteSize, char parity, 
 		  sleep(5);
 		}
 	}
-
+    
     if(_fd < 0)
 		{
       perror("GIVING UP. Unable to open serial port.");
@@ -36,7 +36,7 @@ void startSerial(const char *portName, int baudRate, int byteSize, char parity, 
     else
     {
         fcntl(_fd, F_SETFL, 0);
-
+ 
         tcgetattr(_fd, &_serOptions);
 				cfmakeraw(&_serOptions);
         cfsetispeed(&_serOptions, baudRate);
@@ -59,50 +59,50 @@ void startSerial(const char *portName, int baudRate, int byteSize, char parity, 
                 _serOptions.c_cflag &= ~PARODD;
                 _serOptions.c_iflag |= (INPCK | ISTRIP);
                 break;
-
+                
             default:
                 _serOptions.c_cflag&= ~ PARENB;
                 break;
-
+            
         }
-
+        
         if(stopBits==2)
             _serOptions.c_cflag |= CSTOPB;
         else
             _serOptions.c_cflag &= ~CSTOPB;
-
+        
         _serOptions.c_cflag &= ~CSIZE;
-
-
+        
+        
         switch(byteSize)
         {
             case 5:
                 _serOptions.c_cflag |= CS5;
                 break;
-
+                
             case 6:
                 _serOptions.c_cflag|=CS6;
                 break;
-
+                
             case 7:
                 _serOptions.c_cflag|=CS7;
                 break;
-
+                
             default:
                 _serOptions.c_cflag|=CS8;
         }
     }
-
+    
     // Disable hw flow control
     _serOptions.c_cflag &= ~CRTSCTS;
-
+    
     // Disable sw flow control
     _serOptions.c_iflag &= ~(IXON | IXOFF | IXANY);
-
-
+    
+    
     // Clear canonical input mode
     _serOptions.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-
+	
 		/*
 	// Set canonical input mode
 	_serOptions.c_lflag |= ICANON; */
@@ -123,7 +123,7 @@ int serialRead(char *buffer)
 
 	if(_fd >= 0)
 		n = read(_fd, buffer, MAX_BUFFER_LEN);
-
+	
 	return n;
 }
 
@@ -133,6 +133,11 @@ void serialWrite(char *buffer, int len)
 	if(_fd >= 0)
 	{
 		n = write(_fd, (void *) buffer, len);
-		fsync(_fd);
 	}
+}
+
+void endSerial()
+{
+	if(_fd > 0)
+		close(_fd);
 }

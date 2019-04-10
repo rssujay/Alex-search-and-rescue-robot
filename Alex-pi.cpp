@@ -7,6 +7,7 @@
 #include "serial.h"
 #include "serialize.h"
 #include "constants.h"
+#include <iostream>
 
 #define PORT_NAME			"/dev/ttyACM0"
 #define BAUD_RATE			B57600
@@ -93,7 +94,8 @@ void handleErrorResponse(TPacket *packet)
 
 void handleMessage(TPacket *packet)
 {
-	printf("Message from Alex: %s\n", packet->data);
+	std::cout << packet->data << std::endl;
+	//printf("Message from Alex: %s\n", packet->data);
 }
 
 void handlePacket(TPacket *packet)

@@ -4,7 +4,7 @@
 #include "packet.h"
 #include "constants.h"
 
-bool overrideIR = true;
+bool overrideIR = false;
 bool pcint_negedge = false;
 
 typedef enum {
@@ -625,14 +625,13 @@ void handleCommand(TPacket *command)
       clearOneCounter(command->params[0]);
         break;
       
-    case COMMAND_OVERRIDEIR
-      overrideIR = true;
+    case COMMAND_OVERRIDEIR:
+      overrideIR = ~overrideIR;
       break;
       
     case COMMAND_SCAN_COLOUR:
       stop();
-      //overide ir
-      sendMessage(colourDetect());
+      colourDetect();
       break;
            
     default:
@@ -684,7 +683,6 @@ void startADC(){
 }
 
 ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conversion
-  //Serial.println("IR");
     unsigned int loval = ADCL;
     unsigned int hival = ADCH;
     unsigned int adcvalue = hival * 256 + loval; // ADC conversion result is 10 bits, stored in ADCH & ADCL
@@ -692,21 +690,25 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
   // Multiplex between the sensors
   // IR sensor is approximately digital (0 when too close)
   switch(ADMUX){ 
-    case 0b01000000: // A0 
-      adcvalue < 500 && !(overrideIR) ? /*Serial.println("Left collision detect")*/ sendMessage("LEFT!") : 1;
+    case 0b01000000: // A0
+    if (adcvalue < 500 && !(overrideIR)){
+      sendMessage("Left");
+    }
       ADMUX = 0b01000001;
       break;
     
     case 0b01000001: // A1
-      adcvalue < 500 && !(overrideIR) ? Serial.println("Centre collision detect"): 1;
+      if (adcvalue < 500 && !(overrideIR)){
+        sendMessage("Centre");
+      }
       ADMUX = 0b01000010;
-      sendMessage("MID!");
       break;
 
     case 0b01000010: // A2
-      adcvalue < 500 && !(overrideIR) ? Serial.println("Right collision detect"): 1;
+      if (adcvalue < 500 && !(overrideIR)){
+        sendMessage("Right");
+      }
       ADMUX = 0b01000000;
-      sendMessage("RIGHT!");
       break;
   }
   ADCSRA |= 0b01000000; // Restart ADC conversion
@@ -723,7 +725,7 @@ void setupColourSensor(){
   PORTD &= 0b11100111;
 }
 
-char colourDetect(){
+void colourDetect(){
   int sensorOut = 8;
   int red, blue, green;
 
@@ -754,22 +756,22 @@ char colourDetect(){
   blue = pulseIn(sensorOut, LOW);
   blue = map(blue, 0, 1023, 0, 255);
 
-  Serial.print("Red = ");
-  Serial.println(red);
- 
-  Serial.print("Green = ");
-  Serial.println(green);
- 
-  Serial.print("Blue = ");
-  Serial.println(blue);
-  
-  Serial.println((red < 550 && blue > red && green > red));
+//  Serial.print("Red = ");
+//  Serial.println(red);
+// 
+//  Serial.print("Green = ");
+//  Serial.println(green);
+// 
+//  Serial.print("Blue = ");
+//  Serial.println(blue);
+//  
+//  Serial.println((red < 550 && blue > red && green > red));
 
   //power saver mode
   PORTD &= 0b11101111;
   PORTB &= 0b11101111; 
   
-  return (red < 550 && blue > red && green > red) ? sendMessage('g') : sendMessage('r');
+  (red < 550 && blue > red && green > red) ? sendMessage('g') : sendMessage('r');
 }
 
 void setup() {
@@ -787,7 +789,7 @@ void setup() {
     enablePullups();
     initializeState();
     setupADC();
-    //setupColourSensor();
+    setupColourSensor();
     sei();
     startADC();
     forward(100,30);
@@ -882,5 +884,4 @@ void handlePacket(TPacket * packet)
           stop();
         }
       }
-      //colourDetect();
   }

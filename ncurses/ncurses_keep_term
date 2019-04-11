@@ -1,0 +1,13 @@
+#include <ncurses.h>
+#include <iostream>
+
+int main(void){
+  newterm();
+  int c;
+  while(getch(c) != 'E'){
+    std::cout << c << std::endl;
+  }
+
+  endwin();
+  return 0;
+}

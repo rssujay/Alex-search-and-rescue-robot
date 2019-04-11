@@ -4,7 +4,7 @@
 #include "packet.h"
 #include "constants.h"
 
-volatile bool overrideIR = true;
+bool overrideIR = false;
 bool pcint_negedge = false;
 
 typedef enum {
@@ -73,7 +73,6 @@ volatile unsigned long rightReverseTicksTurns;
 // and right wheels
 volatile unsigned long leftRevs;
 volatile unsigned long rightRevs;
-// Alex's diagonal, we compute and store this value only once
 
 // Forward and backward distance traveled
 volatile float forwardDist;
@@ -263,10 +262,6 @@ void leftISR()
   // We calculate forwardDist only in leftISR because we
   // assume that the left and right wheels move at the same
   // time.
-
-  //Serial.print("Left ticks =");
-  //Serial.print(" ");
-  //Serial.print(leftForwardTicks);
 }
 
 void rightISR()
@@ -429,7 +424,7 @@ void rightISR()
     // RF = Right forward pin, RR = Right reverse pin
     // This will be replaced later with bare-metal code.
     analogWrite(LF, val);
-    analogWrite(RF, 0.865 * val);
+    analogWrite(RF, val);
     analogWrite(LR, 0);
     analogWrite(RR, 0);
   }
@@ -495,7 +490,7 @@ void rightISR()
   // "speed" is expressed as a percentage. E.g. 50 is
   // turn left at half speed.
   // Specifying an angle of 0 degrees will cause Alex to
-  // turn s indefinitely.
+  // turn right indefinitely.
   void right(float ang, float speed)
   {
     deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
@@ -626,8 +621,7 @@ void handleCommand(TPacket *command)
         break;
       
     case COMMAND_OVERRIDEIR:
-      overrideIR = !overrideIR;
-      (overrideIR)? sendMessage("override on") : sendMessage("override off");
+      overrideIR = ~overrideIR;
       break;
       
     case COMMAND_SCAN_COLOUR:
@@ -683,12 +677,6 @@ void startADC(){
   ADCSRA |= 0b01000000; // start ADC conversion
 }
 
-
-
-//
-//    IR SENSOR ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//
 ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conversion
     unsigned int loval = ADCL;
     unsigned int hival = ADCH;
@@ -699,30 +687,21 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
   switch(ADMUX){ 
     case 0b01000000: // A0
     if (adcvalue < 500 && !(overrideIR)){
-      overrideIR = true;
-      stop();
-      delay(10);
-      sendMessage("L on");
+      sendMessage("Left");
     }
       ADMUX = 0b01000001;
       break;
     
     case 0b01000001: // A1
       if (adcvalue < 500 && !(overrideIR)){
-        overrideIR = true;
-        stop();
-        delay(10);
-        sendMessage("C on");
+        sendMessage("Centre");
       }
       ADMUX = 0b01000010;
       break;
 
     case 0b01000010: // A2
       if (adcvalue < 500 && !(overrideIR)){
-        overrideIR = true;
-        stop();
-        delay(10);
-        sendMessage("R on");
+        sendMessage("Right");
       }
       ADMUX = 0b01000000;
       break;
@@ -742,66 +721,52 @@ void setupColourSensor(){
 }
 
 void colourDetect(){
+  int sensorOut = 8;
+  int red, blue, green;
+
+  // Set at 20% power - Set S0 as HIGH and S1 as LOW
+  PORTD |= 0b00010000;
+  PORTD &= 0b11110111;
+  delay(300);
+  //Serial.println("colour detector on");
   
-    int sensorOut = 8;
-    int red, blue, green;
+  //Detect red colour - Set S2 and S3 as LOW
+  PORTB &= 0b11111101;
+  PORTD &= 0b01111111;  
+  //delay(300);
+  red = pulseIn(sensorOut, LOW);
+  red = map(red, 0, 1023, 0, 255);
   
-    // Set at 20% power - Set S0 as HIGH and S1 as LOW
-    PORTD |= 0b00010000;
-    PORTD &= 0b11110111;
-    delay(300);
-    //Serial.println("colour detector on");
-    
-    //Detect red colour - Set S2 and S3 as LOW
-    PORTB &= 0b11111101;
-    PORTD &= 0b01111111;  
-    //delay(300);
-    red = pulseIn(sensorOut, LOW);
-    red = map(red, 20, 3600, 0, 255);
-    
-    //Detect green colour - Set S2 and S3 as HIGH
-    PORTB |= 0b00000010;
-    PORTD |= 0b10000000;
-    //delay(300);
-    green = pulseIn(sensorOut, LOW);
-    green = map(green, 15, 4860, 0, 255);
-  
-    //Detect blue colour - Set S2 as low and S3 as HIGH
-    PORTB &= 0b11111101;
-    PORTD |= 0b10000000;
-    //delay(300);
-    blue = pulseIn(sensorOut, LOW);
-    blue = map(blue, 12, 4900, 0, 255);
+  //Detect green colour - Set S2 and S3 as HIGH
+  PORTB |= 0b00000010;
+  PORTD |= 0b10000000;
+  //delay(300);
+  green = pulseIn(sensorOut, LOW);
+  green = map(green, 0, 1023, 0, 255);
+
+  //Detect blue colour - Set S2 as low and S3 as HIGH
+  PORTB &= 0b11111101;
+  PORTD |= 0b10000000;
+  //delay(300);
+  blue = pulseIn(sensorOut, LOW);
+  blue = map(blue, 0, 1023, 0, 255);
+
+//  Serial.print("Red = ");
+//  Serial.println(red);
+// 
+//  Serial.print("Green = ");
+//  Serial.println(green);
+// 
+//  Serial.print("Blue = ");
+//  Serial.println(blue);
 //  
-//    Serial.print("Red = ");
-//    Serial.println(red);
-//  // 
-//    Serial.print("Green = ");
-//    Serial.println(green);
-//  // 
-//    Serial.print("Blue = ");
-//    Serial.println(blue);
-    
-  //  Serial.println((red < 550 && blue > red && green > red));
-  
-    //power saver mode
-    PORTD &= 0b11101111;
-    PORTB &= 0b11101111; 
-  
-    if(red <= 300 && red >= 73 && green <= 46 && green <= 230 && blue >= 56 && blue<= 235 && green < red && green < blue) {
-      sendMessage("g");
-      
+//  Serial.println((red < 550 && blue > red && green > red));
 
-    }
-    if (red<=180 && red >= 45 && green >= 78 && green <= 205 && blue >= 68 && blue <= 185 && red < green && red < blue) {
-      sendMessage("r");
-    }
-    else {
-      sendMessage("nil");
-    }
-
-    delay(1000);
+  //power saver mode
+  PORTD &= 0b11101111;
+  PORTB &= 0b11101111; 
   
+  (red < 550 && blue > red && green > red) ? sendMessage('g') : sendMessage('r');
 }
 
 void setup() {
@@ -822,7 +787,6 @@ void setup() {
     setupColourSensor();
     sei();
     startADC();
-    //forward(100,75);
   }
 
 void handlePacket(TPacket * packet)
@@ -849,8 +813,6 @@ void handlePacket(TPacket * packet)
 
   void loop() {
     // Uncomment the code below for Step 2 of Activity 3 in Week 8 Studio 2
-
-  
 
     // Uncomment the code below for Week 9 Studio 2
 

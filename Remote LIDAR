@@ -1,0 +1,11 @@
+1) Open terminal 1, run roscore
+
+2) Open terminal 2, SSH into pi, and run:
+
+source ~/Desktop/w9s1_slam/devel/setup.bash
+roslaunch rplidar_ros rplidar.launch
+
+3) Open terminal 3, run
+roslaunch rplidar_ros view_slam.launch
+
+Ctrl-C step 2 and step 3 and restart in same order to reset picture

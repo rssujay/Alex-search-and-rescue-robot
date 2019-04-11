@@ -7,8 +7,6 @@
 #include "serial.h"
 #include "serialize.h"
 #include "constants.h"
-#include <iostream>
-#include <ncurses.h>
 
 #define PORT_NAME			"/dev/ttyACM0"
 #define BAUD_RATE			B57600
@@ -95,8 +93,7 @@ void handleErrorResponse(TPacket *packet)
 
 void handleMessage(TPacket *packet)
 {
-	std::cout << packet->data << std::endl;
-	//printf("Message from Alex: %s\n", packet->data);
+	printf("Message from Alex: %s\n", packet->data);
 }
 
 void handlePacket(TPacket *packet)
@@ -150,7 +147,7 @@ void *receiveThread(void *p)
 				counter=0;
 				handlePacket(&packet);
 			}
-			else
+			else 
 				if(result != PACKET_INCOMPLETE)
 				{
 					printf("PACKET ERROR\n");
@@ -175,74 +172,14 @@ void getParams(TPacket *commandPacket)
 	flushInput();
 }
 
-void WASDcontrol(void){
-	while (1){
-	TPacket commandPacket;
-	commandPacket.packetType = PACKET_TYPE_COMMAND;
-	
-		WINDOW *w;
-		initscr();
-		int key_code;
-		timeout(-1);
-		key_code = getch();
-
-		switch(key_code){
-			case 'W':
-			case 'w':
-			commandPacket.params[0] = 0;
-			commandPacket.params[1] = 75;
-			commandPacket.command = COMMAND_FORWARD;
-			sendPacket(&commandPacket);
-			usleep(100000);
-			break;
-
-			case 'A':
-			case 'a':
-			commandPacket.params[0] = 0;
-			commandPacket.params[1] = 75;
-			commandPacket.command = COMMAND_TURN_LEFT;
-			sendPacket(&commandPacket);
-			usleep(100000);
-			break;
-
-			case 'S':
-			case 's':
-			commandPacket.params[0] = 0;
-			commandPacket.params[1] = 75;
-			commandPacket.command = COMMAND_REVERSE;
-			sendPacket(&commandPacket);
-			usleep(100000);
-			break;
-
-			case 'D':
-			case 'd':
-			commandPacket.params[0] = 0;
-			commandPacket.params[1] = 75;
-			commandPacket.command = COMMAND_TURN_RIGHT;
-			sendPacket(&commandPacket);
-			usleep(100000);
-			break;
-
-			case 'N':
-			case 'n':
-			return ;
-
-			default:
-				commandPacket.command = COMMAND_STOP;
-				sendPacket(&commandPacket);
-				usleep(100000);
-		}
-		usleep(100000);
-	}
-}
-
 void sendCommand(char command)
 {
 	TPacket commandPacket;
 
 	commandPacket.packetType = PACKET_TYPE_COMMAND;
 
-	switch(command){
+	switch(command)
+	{
 		case 'f':
 		case 'F':
 			getParams(&commandPacket);
@@ -289,7 +226,7 @@ void sendCommand(char command)
 			commandPacket.command = COMMAND_GET_STATS;
 			sendPacket(&commandPacket);
 			break;
-
+		
 		case 'o':
 		case 'O':
 			commandPacket.command = COMMAND_OVERRIDEIR;
@@ -344,13 +281,7 @@ int main()
 		// Purge extraneous characters from input stream
 		flushInput();
 
-		if (ch == 'N' || ch == 'n'){
-			WASDcontrol();
-			std::cin.clear();
-		}
-		else{
-			sendCommand(ch);
-		}
+		sendCommand(ch);
 	}
 
 	printf("Closing connection to Arduino.\n");

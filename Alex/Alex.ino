@@ -7,6 +7,7 @@
 
 bool overrideIR = true;
 bool pcint_negedge = false;
+int resetCounter = 0;
 
 typedef enum {
   STOP = 0,
@@ -136,7 +137,8 @@ void sendStatus()
   statusPacket.params[6] = leftReverseTicksTurns;
   statusPacket.params[7] = rightReverseTicksTurns;
   statusPacket.params[8] = forwardDist;
-  statusPacket.params[9] = reverseDist;  
+  statusPacket.params[9] = reverseDist;
+  //statusPacket.params[10] = resetCounter;  
   sendResponse(&statusPacket);
 }
 
@@ -636,7 +638,6 @@ void handleCommand(TPacket *command)
     case COMMAND_OVERRIDEIR:
       overrideIR = !overrideIR;
       (overrideIR) ? (sendMessage("Override ON")) : (sendMessage("Override OFF"));
-   
       break;
       
     case COMMAND_SCAN_COLOUR:
@@ -834,8 +835,10 @@ void handlePacket(TPacket * packet)
 
       TResult result = readPacket(&recvPacket);
 
-      if(result == PACKET_OK)
+      if(result == PACKET_OK){
         handlePacket(&recvPacket);
+        resetCounter++;
+      }
       else
         if(result == PACKET_BAD)
         {
@@ -846,6 +849,7 @@ void handlePacket(TPacket * packet)
           {
             sendBadChecksum();
           }
+
 
       if(deltaDist > 0){
         if(dir==FORWARD && forwardDist >= newDist){

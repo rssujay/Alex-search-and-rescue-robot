@@ -93,9 +93,7 @@ volatile bool middleIRTrigger;
 volatile bool rightIRTrigger;
 
 /*
-
    Alex Communication Routines.
-
 */
 
 TResult readPacket(TPacket *packet)
@@ -217,7 +215,6 @@ void sendResponse(TPacket *packet)
 /*
    Setup and start codes for external interrupts and
    pullup resistors.
-
 */
 // Enable pull up resistors on pin 2
 void enablePullups()
@@ -325,7 +322,6 @@ void rightISR()
 
   /*
      Setup and start codes for serial communications
-
   */
   // Set up the serial connection. For now we are using
   // Arduino Wiring, you will replace this later
@@ -371,7 +367,6 @@ void rightISR()
 
   /*
      Alex's motor drivers.
-
   */
 
   // Set up Alex's motors. Right now this is empty, but
@@ -415,18 +410,26 @@ void rightISR()
   // continue moving forward indefinitely.
   void forward(float dist, float speed)
   {
-    deltaDist = (dist == 0)? 9999999 : dist;
-    newDist = forwardDist + deltaDist;    
+    int prevleftForwardTicks = leftForwardTicks;
+    int prevrightForwardTicks = rightForwardTicks;
     dir = FORWARD;
-    int val = pwmVal(speed);
-    
+
+    while (rightForwardTicks == prevrightForwardTicks && leftForwardTicks == prevleftForwardTicks)
+    {
+      speed += 5;
+      int val = pwmVal(speed);
+      analogWrite(LF, val);
+      analogWrite(RF, val);
+      analogWrite(LR, 0);
+      analogWrite(RR, 0);
+    }
+    deltaDist = (dist == 0)? 9999999 : dist;
+      newDist = forwardDist + deltaDist;    
+      
     // LF = Left forward pin, LR = Left reverse pin
     // RF = Right forward pin, RR = Right reverse pin
     // This will be replaced later with bare-metal code.
-    analogWrite(LF, val);
-    analogWrite(RF, val);
-    analogWrite(LR, 0);
-    analogWrite(RR, 0);
+    
   }
 
   // Reverse Alex "dist" cm at speed "speed".
@@ -436,22 +439,29 @@ void rightISR()
   // continue reversing indefinitely.
   void reverse(float dist, float speed)
   {
+    dir = BACKWARD;
+    int prevleftReverseTicks = leftReverseTicks;
+    int prevrightReverseTicks = rightReverseTicks;
+
+    while (rightReverseTicks == prevrightReverseTicks && leftReverseTicks == prevleftReverseTicks)
+    {
+      speed += 5;
+      int val = pwmVal(speed);
+      analogWrite(LF, 0);
+      analogWrite(RF, 0);
+      analogWrite(LR, val);
+      analogWrite(RR, val);
+    }
+ 
     
     deltaDist = (dist == 0)? 9999999 : dist;
     newDist = reverseDist + deltaDist;
-    dir = BACKWARD;
     int val = pwmVal(speed);
-    // For now we will ignore dist and
-    // reverse indefinitely. We will fix this
-    // in Week 9.
-
+  /*
     // LF = Left forward pin, LR = Left reverse pin
     // RF = Right forward pin, RR = Right reverse pin
     // This will be replaced later with bare-metal code.
-    analogWrite(LR, val);
-    analogWrite(RR, val);
-    analogWrite(LF, 0);
-    analogWrite(RF, 0);
+    */
   }
 
   unsigned long computeDeltaTicks(float ang){
@@ -470,20 +480,21 @@ void rightISR()
   // turn left indefinitely.
   void left(float ang, float speed)
   {
+    dir = LEFT;
+    int prevLeftReverseTicksTurns = leftReverseTicksTurns;
+    int prevRightForwardTicksTurns = rightForwardTicksTurns;
+    
+    while (leftReverseTicksTurns == prevLeftReverseTicksTurns && prevRightForwardTicksTurns == rightForwardTicksTurns)
+    {
+      speed += 5;
+      int val = pwmVal(speed);
+      analogWrite(LR, val);
+      analogWrite(RF, val);
+      analogWrite(LF, 0);
+      analogWrite(RR, 0);
+    }
     deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
     targetTicks = leftReverseTicksTurns + deltaTicks;
-    dir = LEFT;
-    
-    int val = pwmVal(speed);
-
-    // For now we will ignore ang. We will fix this in Week 9.
-    // We will also replace this code with bare-metal later.
-    // To turn left we reverse the left wheel and move
-    // the right wheel forward.
-    analogWrite(LR, val);
-    analogWrite(RF, val);
-    analogWrite(LF, 0);
-    analogWrite(RR, 0);
   }
 
   // Turn Alex right "ang" degrees at speed "speed".
@@ -493,19 +504,21 @@ void rightISR()
   // turn right indefinitely.
   void right(float ang, float speed)
   {
-    deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
-    targetTicks = rightReverseTicksTurns + deltaTicks;
     dir = RIGHT;
-    int val = pwmVal(speed);
-
-    // For now we will ignore ang. We will fix this in Week 9.
-    // We will also replace this code with bare-metal later.
-    // To turn right we reverse the right wheel and move
-    // the left wheel forward.
-    analogWrite(RR, val);
-    analogWrite(LF, val);
-    analogWrite(LR, 0);
-    analogWrite(RF, 0);
+    int prevRightReverseTicksTurns = rightReverseTicksTurns;
+    int prevLeftForwardTicksTurns = leftForwardTicksTurns;
+    
+    while (rightReverseTicksTurns == prevRightReverseTicksTurns && prevLeftForwardTicksTurns == leftForwardTicksTurns)
+    {
+      speed += 5;
+      int val = pwmVal(speed);
+      analogWrite(RR, val);
+      analogWrite(LF, val);
+      analogWrite(LR, 0);
+      analogWrite(RF, 0);
+    }
+    deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
+    targetTicks = rightReverseTicksTurns + deltaTicks;    
   }
 
   // Stop Alex. To replace with bare-metal code later.
@@ -520,7 +533,6 @@ void rightISR()
 
   /*
      Alex's setup and run codes
-
   */
 
   // Clears all our counters

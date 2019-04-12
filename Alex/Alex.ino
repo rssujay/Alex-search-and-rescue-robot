@@ -329,7 +329,7 @@ void rightISR()
   void setupSerial()
   {
     // To replace later with bare-metal.
-    Serial.begin(57600);
+    Serial.begin(115200);
   }
 
   // Start the serial connection. For now we are using
@@ -633,7 +633,9 @@ void handleCommand(TPacket *command)
         break;
       
     case COMMAND_OVERRIDEIR:
-      overrideIR = ~overrideIR;
+      overrideIR = !overrideIR;
+      (overrideIR) ? (sendMessage("Override ON")) : (sendMessage("Override OFF"));
+   
       break;
       
     case COMMAND_SCAN_COLOUR:
@@ -733,52 +735,50 @@ void setupColourSensor(){
 }
 
 void colourDetect(){
-  int sensorOut = 8;
-  int red, blue, green;
-
-  // Set at 20% power - Set S0 as HIGH and S1 as LOW
-  PORTD |= 0b00010000;
-  PORTD &= 0b11110111;
-  delay(300);
-  //Serial.println("colour detector on");
   
-  //Detect red colour - Set S2 and S3 as LOW
-  PORTB &= 0b11111101;
-  PORTD &= 0b01111111;  
-  //delay(300);
-  red = pulseIn(sensorOut, LOW);
-  red = map(red, 0, 1023, 0, 255);
+    int sensorOut = 8;
+    int red, blue, green;
   
-  //Detect green colour - Set S2 and S3 as HIGH
-  PORTB |= 0b00000010;
-  PORTD |= 0b10000000;
-  //delay(300);
-  green = pulseIn(sensorOut, LOW);
-  green = map(green, 0, 1023, 0, 255);
-
-  //Detect blue colour - Set S2 as low and S3 as HIGH
-  PORTB &= 0b11111101;
-  PORTD |= 0b10000000;
-  //delay(300);
-  blue = pulseIn(sensorOut, LOW);
-  blue = map(blue, 0, 1023, 0, 255);
-
-//  Serial.print("Red = ");
-//  Serial.println(red);
-// 
-//  Serial.print("Green = ");
-//  Serial.println(green);
-// 
-//  Serial.print("Blue = ");
-//  Serial.println(blue);
-//  
-//  Serial.println((red < 550 && blue > red && green > red));
-
-  //power saver mode
-  PORTD &= 0b11101111;
-  PORTB &= 0b11101111; 
+    // Set at 100% power
+    PORTD |= 0b00011000;
+    delay(300);
+    
+    //Detect red colour - Set S2 and S3 as LOW
+    PORTB &= 0b11111101;
+    PORTD &= 0b01111111;  
+    red = pulseIn(sensorOut, LOW);
+    red = map(red, 11, 130, 255, 0);
+    
+    //Detect green colour - Set S2 and S3 as HIGH
+    PORTB |= 0b00000010;
+    PORTD |= 0b10000000;
+    //delay(300);
+    green = pulseIn(sensorOut, LOW);
+    green = map(green, 15, 140, 255, 0);
   
-  (red < 550 && blue > red && green > red) ? sendMessage('g') : sendMessage('r');
+    //Detect blue colour - Set S2 as low and S3 as HIGH
+    PORTB &= 0b11111101;
+    PORTD |= 0b10000000;
+    //delay(300);
+    blue = pulseIn(sensorOut, LOW);
+  
+    //power saver mode
+    PORTD &= 0b11101111;
+    PORTB &= 0b11101111; 
+  
+    if(green > 0 && green <= 255 && green > red + 8 && green > blue) {
+      sendMessage("g");
+      
+
+    }
+    else if (red > 0 && red <= 255 && red > green + 8 && red > blue) {
+      sendMessage("r");
+    }
+    else {
+      sendMessage("nil");
+    }
+
+    delay(1000);
 }
 
 void setup() {

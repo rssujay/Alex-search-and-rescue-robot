@@ -182,7 +182,7 @@ void *writerThread(void *conn)
 
 		if (ch == 'n' || ch == 'N'){
 				initscr();
-				//noecho();
+				noecho();
 				int character = getch();
 
 				while(character != 'n'){
@@ -233,8 +233,8 @@ void *writerThread(void *conn)
 							break;
 					}
 			}
-			flushInput();
 			endwin();
+			clear();
 		}
 
 			else{

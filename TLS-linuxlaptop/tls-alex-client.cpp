@@ -8,8 +8,70 @@
 // Packet types, error codes, etc.
 #include "constants.h"
 
+//WASD drive control
+#include <ncurses.h>
+
 // Tells us that the network is running.
 static volatile int networkActive=0;
+
+void WASDcontrol(void){
+	initscr();
+	//noecho();
+	int c = getch();
+	char buffer[10];
+	int32_t params[2];
+
+	while(c != 'n'){
+		c = getch();
+		switch(c){
+			case 'W':
+			case 'w':
+				buffer[1] = 'f';
+				params[0] = 5;
+				params[1] = 0;
+				memcpy(&buffer[2], params, sizeof(params));
+				sendData(conn, buffer, sizeof(buffer));
+				break;
+
+			case 'A':
+			case 'a':
+				buffer[1] = 'l';
+				params[0] = 5;
+				params[1] = 0;
+				memcpy(&buffer[2], params, sizeof(params));
+				sendData(conn, buffer, sizeof(buffer));
+				break;
+
+			case 'S':
+			case 's':
+				buffer[1] = 'r';
+				params[0] = 5;
+				params[1] = 0;
+				memcpy(&buffer[2], params, sizeof(params));
+				sendData(conn, buffer, sizeof(buffer));
+				break;
+
+			case 'D':
+			case 'd':
+				buffer[1] = 'b';
+				params[0] = 5;
+				params[1] = 0;
+				memcpy(&buffer[2], params, sizeof(params));
+				sendData(conn, buffer, sizeof(buffer));
+				break;
+
+			default:
+				params[0]=0;
+				params[1]=0;
+				memcpy(&buffer[2], params, sizeof(params));
+				buffer[1] = 's';
+				sendData(conn, buffer, sizeof(buffer));
+				break;
+		}
+	}
+	flushInput();
+	endwin();
+}
 
 void handleError(const char *buffer)
 {
@@ -107,7 +169,7 @@ void sendData(void *conn, const char *buffer, int len)
 
 		c = sslWrite(conn, buffer, sizeof(buffer));
 
-		/* END TODO */	
+		/* END TODO */
 		networkActive = (c > 0);
 	}
 }
@@ -122,7 +184,7 @@ void *readerThread(void *conn)
 		/* TODO: Insert SSL read here into buffer */
 		len = sslRead( conn, buffer, sizeof(buffer));
         printf("read %d bytes from server.\n", len);
-		
+
 		/* END TODO */
 
 		networkActive = (len > 0);
@@ -132,9 +194,9 @@ void *readerThread(void *conn)
 	}
 
 	printf("Exiting network listener thread\n");
-    
+
     /* TODO: Stop the client loop and call EXIT_THREAD */
-	stopClient();	
+	stopClient();
 	EXIT_THREAD(conn);
     /* END TODO */
 }
@@ -161,7 +223,7 @@ void *writerThread(void *conn)
 	while(!quit)
 	{
 		char ch;
-		printf("Command (f=forward, b=reverse, l=turn left, r=turn right, s=stop, c=clear stats, g=get stats q=exit)\n");
+		printf("Command (f=forward, b=reverse, l=turn left, r=turn right, s=stop, c=clear stats, g=get stats q=exit, n=WASD drive)\n");
 		scanf("%c", &ch);
 
 		// Purge extraneous characters from input stream
@@ -173,6 +235,10 @@ void *writerThread(void *conn)
 		buffer[0] = NET_COMMAND_PACKET;
 		switch(ch)
 		{
+			case 'n':
+			case 'N':
+				WASDcontrol();
+
 			case 'f':
 			case 'F':
 			case 'b':
@@ -219,7 +285,7 @@ void *writerThread(void *conn)
    CA filename, etc. that you need to create a client */
 	#define PVT_KEY1 "laptop.key"
 	#define CERT1 "laptop.crt"
-	#define CA_CERT1 "signing.pem" 
+	#define CA_CERT1 "signing.pem"
 	#define COMMON_NAME1 "alex.epp.com"
 
 /* END TODO */

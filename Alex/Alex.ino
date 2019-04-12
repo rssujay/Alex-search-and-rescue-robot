@@ -1,10 +1,11 @@
+
 #include <serialize.h>
 #include <math.h>
 
 #include "packet.h"
 #include "constants.h"
 
-bool overrideIR = false;
+bool overrideIR = true;
 bool pcint_negedge = false;
 
 typedef enum {

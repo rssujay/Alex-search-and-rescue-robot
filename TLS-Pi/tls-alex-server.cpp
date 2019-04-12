@@ -347,9 +347,10 @@ int main()
 	// Start the uartReceiveThread. The network thread is started by
     // createServer
 	wiringPiSetup();
-	pinMode(21, OUTPUT);
-	digitalWrite(21, HIGH);
+	pinMode(21, INPUT);
 	digitalWrite(21, LOW);
+	usleep(10000);
+	pinMode(21, OUTPUT);
 	digitalWrite(21, HIGH);
 
 	pthread_t serThread;

@@ -1,10 +1,10 @@
-
 #include <serialize.h>
 #include <math.h>
 
 #include "packet.h"
 #include "constants.h"
 
+int resetCounter = 0;
 bool overrideIR = true;
 bool pcint_negedge = false;
 
@@ -136,7 +136,8 @@ void sendStatus()
   statusPacket.params[6] = leftReverseTicksTurns;
   statusPacket.params[7] = rightReverseTicksTurns;
   statusPacket.params[8] = forwardDist;
-  statusPacket.params[9] = reverseDist;  
+  statusPacket.params[9] = reverseDist; 
+  statusPacket.params[10] = resetCounter; 
   sendResponse(&statusPacket);
 }
 
@@ -521,6 +522,7 @@ void rightISR()
     deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
     targetTicks = rightReverseTicksTurns + deltaTicks;    
   }
+  
 
   // Stop Alex. To replace with bare-metal code later.
   void stop()
@@ -692,6 +694,8 @@ void startADC(){
   ADCSRA |= 0b01000000; // start ADC conversion
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conversion
     unsigned int loval = ADCL;
     unsigned int hival = ADCH;
@@ -703,6 +707,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
     case 0b01000000: // A0
     if (adcvalue < 500 && !(overrideIR)){
       sendMessage("Left");
+      overrideIR = true;
     }
       ADMUX = 0b01000001;
       break;
@@ -710,6 +715,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
     case 0b01000001: // A1
       if (adcvalue < 500 && !(overrideIR)){
         sendMessage("Centre");
+        overrideIR = true;
       }
       ADMUX = 0b01000010;
       break;
@@ -717,6 +723,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
     case 0b01000010: // A2
       if (adcvalue < 500 && !(overrideIR)){
         sendMessage("Right");
+        overrideIR = true;
       }
       ADMUX = 0b01000000;
       break;
@@ -800,6 +807,7 @@ void setup() {
     setupColourSensor();
     sei();
     startADC();
+    forward(25, 50);
   }
 
 void handlePacket(TPacket * packet)
@@ -834,8 +842,10 @@ void handlePacket(TPacket * packet)
 
       TResult result = readPacket(&recvPacket);
 
-      if(result == PACKET_OK)
+      if(result == PACKET_OK){
         handlePacket(&recvPacket);
+        resetCounter++;
+      }
       else
         if(result == PACKET_BAD)
         {

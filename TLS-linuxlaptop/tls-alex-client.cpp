@@ -14,63 +14,8 @@
 // Tells us that the network is running.
 static volatile int networkActive=0;
 
-void WASDcontrol(void){
-	initscr();
-	//noecho();
-	int c = getch();
-	char buffer[10];
-	int32_t params[2];
+char WASDcontrol(void){
 
-	while(c != 'n'){
-		c = getch();
-		switch(c){
-			case 'W':
-			case 'w':
-				buffer[1] = 'f';
-				params[0] = 5;
-				params[1] = 0;
-				memcpy(&buffer[2], params, sizeof(params));
-				sendData(conn, buffer, sizeof(buffer));
-				break;
-
-			case 'A':
-			case 'a':
-				buffer[1] = 'l';
-				params[0] = 5;
-				params[1] = 0;
-				memcpy(&buffer[2], params, sizeof(params));
-				sendData(conn, buffer, sizeof(buffer));
-				break;
-
-			case 'S':
-			case 's':
-				buffer[1] = 'r';
-				params[0] = 5;
-				params[1] = 0;
-				memcpy(&buffer[2], params, sizeof(params));
-				sendData(conn, buffer, sizeof(buffer));
-				break;
-
-			case 'D':
-			case 'd':
-				buffer[1] = 'b';
-				params[0] = 5;
-				params[1] = 0;
-				memcpy(&buffer[2], params, sizeof(params));
-				sendData(conn, buffer, sizeof(buffer));
-				break;
-
-			default:
-				params[0]=0;
-				params[1]=0;
-				memcpy(&buffer[2], params, sizeof(params));
-				buffer[1] = 's';
-				sendData(conn, buffer, sizeof(buffer));
-				break;
-		}
-	}
-	flushInput();
-	endwin();
 }
 
 void handleError(const char *buffer)
@@ -233,43 +178,98 @@ void *writerThread(void *conn)
 		int32_t params[2];
 
 		buffer[0] = NET_COMMAND_PACKET;
-		switch(ch)
-		{
-			case 'n':
-			case 'N':
-				WASDcontrol();
 
-			case 'f':
-			case 'F':
-			case 'b':
-			case 'B':
-			case 'l':
-			case 'L':
-			case 'r':
-			case 'R':
-						getParams(params);
-						buffer[1] = ch;
+		if (ch == 'n' || ch == 'N'){
+				initscr();
+				//noecho();
+				int character = getch();
+
+				while(character != 'n'){
+					character = getch();
+					switch(character){
+						case 'W':
+						case 'w':
+							buffer[1] = 'f';
+							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						case 'A':
+						case 'a':
+							buffer[1] = 'l';
+							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						case 'S':
+						case 's':
+							buffer[1] = 'r';
+							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						case 'D':
+						case 'd':
+							buffer[1] = 'b';
+							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						default:
+							params[0]=0;
+							params[1]=0;
+							memcpy(&buffer[2], params, sizeof(params));
+							buffer[1] = 's';
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+					}
+			}
+			flushInput();
+			endwin();
+		}
+
+			else{
+				switch(ch){
+				case 'f':
+				case 'F':
+				case 'b':
+				case 'B':
+				case 'l':
+				case 'L':
+				case 'r':
+				case 'R':
+							getParams(params);
+							buffer[1] = ch;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+				case 's':
+				case 'S':
+				case 'c':
+				case 'C':
+				case 'g':
+				case 'G':
+						params[0]=0;
+						params[1]=0;
 						memcpy(&buffer[2], params, sizeof(params));
+						buffer[1] = ch;
 						sendData(conn, buffer, sizeof(buffer));
 						break;
-			case 's':
-			case 'S':
-			case 'c':
-			case 'C':
-			case 'g':
-			case 'G':
-					params[0]=0;
-					params[1]=0;
-					memcpy(&buffer[2], params, sizeof(params));
-					buffer[1] = ch;
-					sendData(conn, buffer, sizeof(buffer));
+				case 'q':
+				case 'Q':
+					quit=1;
 					break;
-			case 'q':
-			case 'Q':
-				quit=1;
-				break;
-			default:
-				printf("BAD COMMAND\n");
+				default:
+					printf("BAD COMMAND\n");
+			}
 		}
 	}
 

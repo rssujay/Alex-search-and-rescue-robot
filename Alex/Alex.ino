@@ -638,7 +638,6 @@ void handleCommand(TPacket *command)
     case COMMAND_OVERRIDEIR:
       overrideIR = !overrideIR;
       (overrideIR) ? (sendMessage("Override ON")) : (sendMessage("Override OFF"));
-   
       break;
       
     case COMMAND_SCAN_COLOUR:
@@ -856,6 +855,7 @@ void handlePacket(TPacket * packet)
           {
             sendBadChecksum();
           }
+
 
       if(deltaDist > 0){
         if(dir==FORWARD && forwardDist >= newDist){

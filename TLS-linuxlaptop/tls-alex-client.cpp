@@ -63,6 +63,7 @@ void handleStatus(const char *buffer)
 	printf("Right Reverse Ticks Turns:\t%d\n", data[7]);
 	printf("Forward Distance:\t\t%d\n", data[8]);
 	printf("Reverse Distance:\t\t%d\n", data[9]);
+	printf("Commands Sent:\t\t%d\n", data[10]);
 	printf("\n---------------------------------------\n\n");
 }
 

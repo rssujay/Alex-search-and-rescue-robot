@@ -207,7 +207,7 @@ void *writerThread(void *conn)
 
 						case 'S':
 						case 's':
-							buffer[1] = 'r';
+							buffer[1] = 'b';
 							params[0] = 5;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
@@ -216,7 +216,7 @@ void *writerThread(void *conn)
 
 						case 'D':
 						case 'd':
-							buffer[1] = 'b';
+							buffer[1] = 'r';
 							params[0] = 5;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));

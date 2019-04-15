@@ -485,11 +485,12 @@ void rightISR()
     dir = LEFT;
     int prevLeftReverseTicksTurns = leftReverseTicksTurns;
     int prevRightForwardTicksTurns = rightForwardTicksTurns;
+    int val;
     
     while (leftReverseTicksTurns == prevLeftReverseTicksTurns && prevRightForwardTicksTurns == rightForwardTicksTurns)
     {
-      speed += 5;
-      int val = pwmVal(speed);
+      speed += 30;
+      val = pwmVal(speed);
       analogWrite(LR, val);
       analogWrite(RF, val);
       analogWrite(LF, 0);
@@ -509,11 +510,12 @@ void rightISR()
     dir = RIGHT;
     int prevRightReverseTicksTurns = rightReverseTicksTurns;
     int prevLeftForwardTicksTurns = leftForwardTicksTurns;
+    int val;
     
     while (rightReverseTicksTurns == prevRightReverseTicksTurns && prevLeftForwardTicksTurns == leftForwardTicksTurns)
     {
-      speed += 5;
-      int val = pwmVal(speed);
+      speed += 30;
+      val = pwmVal(speed);
       analogWrite(RR, val);
       analogWrite(LF, val);
       analogWrite(LR, 0);
@@ -707,6 +709,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
     if (adcvalue < 500 && !(overrideIR)){
       sendMessage("Left");
       overrideIR = true;
+      stop();
     }
       ADMUX = 0b01000001;
       break;
@@ -715,6 +718,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
       if (adcvalue < 500 && !(overrideIR)){
         sendMessage("Centre");
         overrideIR = true;
+        stop();
       }
       ADMUX = 0b01000010;
       break;
@@ -723,6 +727,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
       if (adcvalue < 500 && !(overrideIR)){
         sendMessage("Right");
         overrideIR = true;
+        stop();
       }
       ADMUX = 0b01000000;
       break;
@@ -754,7 +759,7 @@ void colourDetect(){
     PORTB &= 0b11111101;
     PORTD &= 0b01111111;  
     red = pulseIn(sensorOut, LOW);
-    red = map(red, 11, 130, 255, 0);
+    red = map(red, 11, 120, 255, 0);
     
     //Detect green colour - Set S2 and S3 as HIGH
     PORTB |= 0b00000010;

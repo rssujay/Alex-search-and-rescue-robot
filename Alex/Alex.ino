@@ -338,8 +338,14 @@ void rightISR()
   // Arduino wiring and this function is empty. We will
   // replace this later with bare-metal code.
 
+
   void startSerial()
   {
+    
+    while (Serial.available() > 0)
+    {
+        char t = Serial.read();
+    }
     // Empty for now. To be replaced with bare-metal code
     // later on.
   }
@@ -521,7 +527,7 @@ void rightISR()
       analogWrite(LR, 0);
       analogWrite(RF, 0);
     }
-    deltaTicks = (ang == 0)? 99999999: computeDeltaTicks(ang);
+    deltaTicks = (ang == 0)? 5: computeDeltaTicks(ang);
     targetTicks = rightReverseTicksTurns + deltaTicks;    
   }
   
@@ -775,22 +781,22 @@ void colourDetect(){
     blue = pulseIn(sensorOut, LOW);
   
     //power saver mode
-    PORTD &= 0b11101111;
-    PORTB &= 0b11101111; 
+//    PORTD &= 0b11101111;
+//    PORTB &= 0b11101111; 
   
     if(green > 0 && green <= 255 && green > red + 8 && green > blue) {
-      sendMessage("g");
+      sendMessage("green");
       
 
     }
     else if (red > 0 && red <= 255 && red > green + 8 && red > blue) {
-      sendMessage("r");
+      sendMessage("right");
     }
     else {
       sendMessage("nil");
     }
 
-    delay(1000);
+    //delay(1000);
 }
 
 void setup() {
@@ -811,7 +817,7 @@ void setup() {
     setupColourSensor();
     sei();
     startADC();
-    forward(25, 50);
+    //forward(25, 50);
   }
 
 void handlePacket(TPacket * packet)

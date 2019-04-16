@@ -766,20 +766,21 @@ void colourDetect(){
     PORTB &= 0b11111101;
     PORTD &= 0b01111111;  
     red = pulseIn(sensorOut, LOW);
-    red = map(red, 11, 120, 255, 0);
+    red = map(red, 15, 155, 255, 0);
     
     //Detect green colour - Set S2 and S3 as HIGH
     PORTB |= 0b00000010;
     PORTD |= 0b10000000;
     //delay(300);
     green = pulseIn(sensorOut, LOW);
-    green = map(green, 15, 140, 255, 0);
+    green = map(green, 14, 240, 255, 0);
   
     //Detect blue colour - Set S2 as low and S3 as HIGH
     PORTB &= 0b11111101;
     PORTD |= 0b10000000;
     //delay(300);
     blue = pulseIn(sensorOut, LOW);
+    blue = map(blue, 17, 270, 255, 0);
   
     //power saver mode
 //    PORTD &= 0b11101111;

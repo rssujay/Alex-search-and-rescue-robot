@@ -784,12 +784,12 @@ void colourDetect(){
 //    PORTD &= 0b11101111;
 //    PORTB &= 0b11101111; 
   
-    if(green > 0 && green <= 255 && green > red + 8 && green > blue) {
+    if(green > 0 && green <= 255 && green > red + 15 && green > blue) {
       sendMessage("green");
       
 
     }
-    else if (red > 0 && red <= 255 && red > green + 8 && red > blue) {
+    else if (red > 0 && red <= 255 && red > green + 15 && red > blue) {
       sendMessage("right");
     }
     else {

@@ -313,6 +313,8 @@ void *writerThread(void *conn)
 						case 'c':
 						case 'G':
 						case 'g':
+						case 'Z':
+						case 'z':
 							params[0]=0;
 							params[1]=0;
 							memcpy(&buffer[2], params, sizeof(params));

@@ -640,12 +640,13 @@ void handleCommand(TPacket *command)
 
     case COMMAND_CLEAR_STATS:
       sendOK();
-      clearOneCounter(command->params[0]);
+      clearCounters();
+      //clearOneCounter(command->params[0]);
         break;
       
     case COMMAND_OVERRIDEIR:
-      overrideIR = !overrideIR;
-      (overrideIR) ? (sendMessage("Override ON")) : (sendMessage("Override OFF"));
+      overrideIR = 0;
+      //(overrideIR) ? (sendMessage("Override ON")) : (sendMessage("Override OFF"));
       break;
       
     case COMMAND_SCAN_COLOUR:
@@ -790,7 +791,7 @@ void colourDetect(){
 
     }
     else if (red > 0 && red <= 255 && red > green + 15 && red > blue) {
-      sendMessage("right");
+      sendMessage("red");
     }
     else {
       sendMessage("nil");

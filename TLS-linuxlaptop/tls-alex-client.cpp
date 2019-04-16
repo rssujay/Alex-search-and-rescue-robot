@@ -10,13 +10,16 @@
 
 //WASD drive control
 #include <ncurses.h>
+#include <string>
+#include <cstring>
+#include <iostream>
 
 // Tells us that the network is running.
 static volatile int networkActive=0;
 
-char WASDcontrol(void){
+//OverrideIR boolean
+static volatile bool lock = 0;
 
-}
 
 void handleError(const char *buffer)
 {
@@ -70,6 +73,14 @@ void handleStatus(const char *buffer)
 void handleMessage(const char *buffer)
 {
 	printf("MESSAGE FROM ALEX: %s\n", &buffer[1]);
+	std::string cstr(buffer);
+	std::cout << cstr << '\n';
+	
+	if (cstr == "Left" || cstr == "Right" || cstr == "Centre")
+	{
+		lock = 1;
+		printf("LOCKED!");
+	}
 }
 
 void handleCommand(const char *buffer)
@@ -190,20 +201,28 @@ void *writerThread(void *conn)
 					switch(character){
 						case 'W':
 						case 'w':
-							buffer[1] = 'f';
-							params[0] = 3;
-							params[1] = 0;
-							memcpy(&buffer[2], params, sizeof(params));
-							sendData(conn, buffer, sizeof(buffer));
-							break;
+							if (!lock)
+							{
+								buffer[1] = 'f';
+								params[0] = 3;
+								params[1] = 0;
+								memcpy(&buffer[2], params, sizeof(params));
+								sendData(conn, buffer, sizeof(buffer));
+								break;
+							}
+							else printf("LOCKED!!!\n");
 
 						case 'A':
 						case 'a':
-							buffer[1] = 'l';
-							params[0] = 5;
-							params[1] = 0;
-							memcpy(&buffer[2], params, sizeof(params));
-							sendData(conn, buffer, sizeof(buffer));
+							if (!lock)
+							{
+								buffer[1] = 'l';
+								params[0] = 5;
+								params[1] = 0;
+								memcpy(&buffer[2], params, sizeof(params));
+								sendData(conn, buffer, sizeof(buffer));
+							}
+							else printf("LOCKED!!!\n");
 							break;
 
 						case 'S':
@@ -217,48 +236,70 @@ void *writerThread(void *conn)
 
 						case 'D':
 						case 'd':
-							buffer[1] = 'r';
-							params[0] = 5;
-							params[1] = 0;
-							memcpy(&buffer[2], params, sizeof(params));
-							sendData(conn, buffer, sizeof(buffer));
+							if (!lock)
+							{
+								buffer[1] = 'r';
+								params[0] = 5;
+								params[1] = 0;
+								memcpy(&buffer[2], params, sizeof(params));
+								sendData(conn, buffer, sizeof(buffer));
+							}
+							else printf("LOCKED!!!\n");
 							break;
 
 
 						case 'I':
 						case 'i':
-							buffer[1] = 'f';
-							params[0] = 5;
-							params[1] = 0;
-							memcpy(&buffer[2], params, sizeof(params));
-							sendData(conn, buffer, sizeof(buffer));
+							if (!lock)
+							{
+								buffer[1] = 'f';
+								params[0] = 5;
+								params[1] = 0;
+								memcpy(&buffer[2], params, sizeof(params));
+								sendData(conn, buffer, sizeof(buffer));
+							}
+							else printf("LOCKED!!!\n");
 							break;
 
 						case 'J':
 						case 'j':
+							if (!lock){
 							buffer[1] = 'l';
 							params[0] = 15;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
 							sendData(conn, buffer, sizeof(buffer));
+							}
+							else printf("LOCKED!!!\n");
 							break;
 
 						case 'K':
 						case 'k':
+							if (!lock){
 							buffer[1] = 'b';
 							params[0] = 5;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
 							sendData(conn, buffer, sizeof(buffer));
+							}
+							else printf("LOCKED!!!\n");
 							break;
 
 						case 'L':
 						case 'l':
+							if (!lock){
 							buffer[1] = 'r';
 							params[0] = 15;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
 							sendData(conn, buffer, sizeof(buffer));
+							}
+							else printf("LOCKED!!!\n");
+							break;
+							
+						case 'U':
+						case 'u':
+							lock = 0;
 							break;
 
 						default:

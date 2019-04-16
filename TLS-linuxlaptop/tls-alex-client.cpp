@@ -73,13 +73,14 @@ void handleStatus(const char *buffer)
 void handleMessage(const char *buffer)
 {
 	printf("MESSAGE FROM ALEX: %s\n", &buffer[1]);
-	std::string cstr(buffer);
+	//std::string cstr(buffer);
+	std::string cstr = &buffer[1];
 	std::cout << cstr << '\n';
 	
 	if (cstr == "Left" || cstr == "Right" || cstr == "Centre")
 	{
 		lock = 1;
-		printf("LOCKED!");
+		printf("LOCKED!\n");
 	}
 }
 

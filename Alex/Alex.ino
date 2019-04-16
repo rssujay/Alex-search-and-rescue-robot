@@ -427,7 +427,7 @@ void rightISR()
       speed += 5;
       int val = pwmVal(speed);
       analogWrite(LF, val);
-      analogWrite(RF, val);
+      analogWrite(RF, val * 0.925);
       analogWrite(LR, 0);
       analogWrite(RR, 0);
     }

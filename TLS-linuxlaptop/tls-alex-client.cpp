@@ -191,7 +191,7 @@ void *writerThread(void *conn)
 						case 'W':
 						case 'w':
 							buffer[1] = 'f';
-							params[0] = 5;
+							params[0] = 3;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
 							sendData(conn, buffer, sizeof(buffer));
@@ -209,7 +209,7 @@ void *writerThread(void *conn)
 						case 'S':
 						case 's':
 							buffer[1] = 'b';
-							params[0] = 5;
+							params[0] = 3;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
 							sendData(conn, buffer, sizeof(buffer));
@@ -219,6 +219,43 @@ void *writerThread(void *conn)
 						case 'd':
 							buffer[1] = 'r';
 							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+
+						case 'I':
+						case 'i':
+							buffer[1] = 'f';
+							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						case 'J':
+						case 'j':
+							buffer[1] = 'l';
+							params[0] = 15;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						case 'K':
+						case 'k':
+							buffer[1] = 'b';
+							params[0] = 5;
+							params[1] = 0;
+							memcpy(&buffer[2], params, sizeof(params));
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+
+						case 'L':
+						case 'l':
+							buffer[1] = 'r';
+							params[0] = 15;
 							params[1] = 0;
 							memcpy(&buffer[2], params, sizeof(params));
 							sendData(conn, buffer, sizeof(buffer));

@@ -228,12 +228,16 @@ void *writerThread(void *conn)
 
 						case 'S':
 						case 's':
-							buffer[1] = 'b';
-							params[0] = 3;
-							params[1] = 0;
-							memcpy(&buffer[2], params, sizeof(params));
-							sendData(conn, buffer, sizeof(buffer));
-							break;
+							if (!lock)
+							{
+								buffer[1] = 'b';
+								params[0] = 3;
+								params[1] = 0;
+								memcpy(&buffer[2], params, sizeof(params));
+								sendData(conn, buffer, sizeof(buffer));
+								break;
+							}
+							else printf("LOCKED!!!\n");
 
 						case 'D':
 						case 'd':
@@ -302,6 +306,20 @@ void *writerThread(void *conn)
 						case 'u':
 							lock = 0;
 							break;
+							
+						case 'O':
+						case 'o' :
+						case 'C':
+						case 'c':
+						case 'G':
+						case 'g':
+							params[0]=0;
+							params[1]=0;
+							memcpy(&buffer[2], params, sizeof(params));
+							buffer[1] = character;
+							sendData(conn, buffer, sizeof(buffer));
+							break;
+							
 
 						default:
 							params[0]=0;

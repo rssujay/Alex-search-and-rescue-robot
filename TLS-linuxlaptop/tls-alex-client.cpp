@@ -205,7 +205,7 @@ void *writerThread(void *conn)
 							if (!lock)
 							{
 								buffer[1] = 'f';
-								params[0] = 3;
+								params[0] = 2;
 								params[1] = 0;
 								memcpy(&buffer[2], params, sizeof(params));
 								sendData(conn, buffer, sizeof(buffer));
@@ -231,7 +231,7 @@ void *writerThread(void *conn)
 							if (!lock)
 							{
 								buffer[1] = 'b';
-								params[0] = 3;
+								params[0] = 2;
 								params[1] = 0;
 								memcpy(&buffer[2], params, sizeof(params));
 								sendData(conn, buffer, sizeof(buffer));

@@ -646,6 +646,8 @@ void handleCommand(TPacket *command)
       
     case COMMAND_OVERRIDEIR:
       overrideIR = 0;
+      setupADC();
+      startADC();
       //(overrideIR) ? (sendMessage("Override ON")) : (sendMessage("Override OFF"));
       break;
       
@@ -697,6 +699,11 @@ void setupADC(){
   ADCSRA = 0b10001111; // Enable ADC module, completion interrupt, clock divider 128
   ADMUX = 0b01000000; // initialize multiplexer to A0
 }
+
+void stopADC(){
+  ADCSRA &= 0b01111111; //Disable ADC module
+  PRR |= 0b00000001; // Turn off ADC module
+}
   
 void startADC(){
   ADCSRA |= 0b01000000; // start ADC conversion
@@ -717,6 +724,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
       sendMessage("Left");
       overrideIR = true;
       stop();
+      stopADC();
     }
       ADMUX = 0b01000001;
       break;
@@ -726,6 +734,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
         sendMessage("Centre");
         overrideIR = true;
         stop();
+        stopADC();
       }
       ADMUX = 0b01000010;
       break;
@@ -735,6 +744,7 @@ ISR(ADC_vect){ //Interrupt triggered upon completion of analog to digital conver
         sendMessage("Right");
         overrideIR = true;
         stop();
+        stopADC();
       }
       ADMUX = 0b01000000;
       break;

@@ -1,5 +1,3 @@
-# CG1112-04-03-02
-
 A project involving mapping of an unknown, simulated hazardous environment using a tele-operated, mobile rescue robot.
 
 

@@ -1,6 +1,12 @@
 # CG1112-04-03-02
 
-A project involving mapping of an unknown, simulated hazardous environment using a tele-operated, mobile rescue robot. 
+A project involving mapping of an unknown, simulated hazardous environment using a tele-operated, mobile rescue robot.
+
+
+<p align="center">
+  <img src=Robot.png>
+</p>
+
 
 <b>Specifications</b>:
 
@@ -12,5 +18,7 @@ A project involving mapping of an unknown, simulated hazardous environment using
 Features:
 - TCP/IP with TLS for wireless communications between Pi and laptops
 - UART between Pi and Arduino as well as Pi and Lidar
+- Remote Arduino code reset using RPi GPIO
+- Circuit implementation and cable management with extensive soldering
 - WASD control using ncurses library
 - Bare-metal and interrupt programming for Arduino-controlled subsystems
